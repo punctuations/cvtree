@@ -2,25 +2,26 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 
+import { useDeepLookup, type DeepLookup } from "@/lib/useDeepLookup";
 import { useCachedLookup, useDirectLookup, type Lookup } from "@/lib/useLookup";
 
 import { isRepoReport } from "@/lib/model";
 
 import { cacheEnabled } from "./ConvexClientProvider";
+import { DeepReport } from "./DeepReport";
 import { Report } from "./Report";
 import { RepoReport } from "./RepoReport";
 
 export function Search({ wordmark }: { wordmark: ReactNode }) {
   return cacheEnabled ? <CachedSearch wordmark={wordmark} /> : <DirectSearch wordmark={wordmark} />;
-
 }
 
 function CachedSearch({ wordmark }: { wordmark: ReactNode }) {
-  return <SearchView wordmark={wordmark} lookup={useCachedLookup()} />;
+  return <SearchView wordmark={wordmark} lookup={useCachedLookup()} deep={useDeepLookup()} />;
 }
 
 function DirectSearch({ wordmark }: { wordmark: ReactNode }) {
-  return <SearchView wordmark={wordmark} lookup={useDirectLookup()} />;
+  return <SearchView wordmark={wordmark} lookup={useDirectLookup()} deep={useDeepLookup()} />;
 }
 
 const SUGGESTIONS = [
@@ -31,13 +32,34 @@ const SUGGESTIONS = [
   "axios/axios",
 ];
 
-function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup }) {
+const DEPTHS = [1, 2, 3];
+
+function SearchView({
+  wordmark,
+  lookup,
+  deep,
+}: {
+  wordmark: ReactNode;
+  lookup: Lookup;
+  deep: DeepLookup;
+}) {
   const [input, setInput] = useState("");
-  const { state, search } = lookup;
+  const [isDeep, setIsDeep] = useState(false);
+  const [depth, setDepth] = useState(2);
+
+  const state = isDeep ? deep.state : lookup.state;
+
+  function run(query: string, deepSearch: boolean, levels: number) {
+    if (deepSearch) {
+      deep.search(query, levels);
+    } else {
+      lookup.search(query);
+    }
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    search(input);
+    run(input, isDeep, depth);
   }
 
   return (
@@ -59,6 +81,33 @@ function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup 
           </button>
         </form>
 
+        <div className="modes">
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={isDeep}
+              onChange={(event) => setIsDeep(event.target.checked)}
+            />
+            <span>Deep search</span>
+          </label>
+
+          {isDeep ? (
+            <span className="depths">
+              <span className="depths-label">depth</span>
+              {DEPTHS.map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  className={level === depth ? "depth is-on" : "depth"}
+                  onClick={() => setDepth(level)}
+                >
+                  {level}
+                </button>
+              ))}
+            </span>
+          ) : null}
+        </div>
+
         <ul className="suggestions">
           {SUGGESTIONS.map((suggestion) => (
             <li key={suggestion}>
@@ -66,7 +115,7 @@ function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup 
                 type="button"
                 onClick={() => {
                   setInput(suggestion);
-                  search(suggestion);
+                  run(suggestion, isDeep, depth);
                 }}
               >
                 {suggestion}
@@ -75,7 +124,9 @@ function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup 
           ))}
         </ul>
 
-        {state.status === "loading" ? <p className="status">Querying OSV</p> : null}
+        {state.status === "loading" ? (
+          <p className="status">{isDeep ? "Walking the dependency tree" : "Querying OSV"}</p>
+        ) : null}
 
         {state.status === "error" ? (
           <p className="status error" role="alert">
@@ -84,11 +135,15 @@ function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup 
         ) : null}
       </section>
 
-      {state.status === "ready" ? (
-        isRepoReport(state.report) ? (
-          <RepoReport report={state.report} />
+      {isDeep && deep.state.status === "ready" ? (
+        <DeepReport report={deep.state.report} cached={false} />
+      ) : null}
+
+      {!isDeep && lookup.state.status === "ready" ? (
+        isRepoReport(lookup.state.report) ? (
+          <RepoReport report={lookup.state.report} />
         ) : (
-          <Report report={state.report} cached={state.cached} />
+          <Report report={lookup.state.report} cached={lookup.state.cached} />
         )
       ) : null}
     </>

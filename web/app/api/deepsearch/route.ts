@@ -1,18 +1,19 @@
 import type { NextRequest } from "next/server";
 
-import { cacheHeaders, cachedPackageReport } from "@/lib/cache";
+import { cacheHeaders, cachedDeepReport } from "@/lib/cache";
+import { clampDepth, deepReport } from "@/lib/deepsearch";
 import { CvtreeError, errorResponse } from "@/lib/errors";
 import { latestVersion } from "@/lib/registry";
-import { packageReport } from "@/lib/report";
-import { repoReport } from "@/lib/repoReport";
-import { cacheKey, parseEcosystem, parseQuery, unknownEcosystem } from "@/lib/spec";
+import { deepCacheKey, parseEcosystem, parseQuery, unknownEcosystem } from "@/lib/spec";
+
+export const maxDuration = 120;
 
 export async function GET(request: NextRequest) {
   try {
     const input = request.nextUrl.searchParams.get("q")?.trim();
     if (!input) {
       return Response.json(
-        { error: "expected a package such as lodash@4.17.15 in the q parameter" },
+        { error: "expected a package such as express@4.17.1 in the q parameter" },
         { status: 400 },
       );
     }
@@ -23,7 +24,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (parsed.query.kind === "repo") {
-      return Response.json(await repoReport(parsed.query.owner, parsed.query.name));
+      throw new CvtreeError(
+        "deep search takes a package, not a repository, such as express@4.17.1",
+        400,
+      );
     }
 
     const requested = request.nextUrl.searchParams.get("ecosystem");
@@ -32,16 +36,30 @@ export async function GET(request: NextRequest) {
       throw new CvtreeError(unknownEcosystem(requested), 400);
     }
 
+    const depth = readDepth(request.nextUrl.searchParams.get("depth"));
     const { name, version, ecosystem } = parsed.query;
     const target = ecosystem ?? override ?? "npm";
     const resolved = version ?? (await latestVersion(name, target));
 
-    const cached = await cachedPackageReport(cacheKey(target, name, resolved), () =>
-      packageReport(name, resolved, target),
+    const cached = await cachedDeepReport(deepCacheKey(target, name, resolved, depth), () =>
+      deepReport(name, resolved, target, { depth }),
     );
 
     return Response.json(cached.report, { headers: cacheHeaders(cached) });
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+function readDepth(raw: string | null): number {
+  if (raw === null) {
+    return clampDepth(null);
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    throw new CvtreeError(`'${raw}' is not a valid depth`, 400);
+  }
+
+  return clampDepth(parsed);
 }

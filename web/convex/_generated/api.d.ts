@@ -8,7 +8,11 @@
  * @module
  */
 
+import type * as cache from "../cache.js";
+import type * as crons from "../crons.js";
+import type * as deep from "../deep.js";
 import type * as packages from "../packages.js";
+import type * as validators from "../validators.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +21,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cache: typeof cache;
+  crons: typeof crons;
+  deep: typeof deep;
   packages: typeof packages;
+  validators: typeof validators;
 }>;
 
 /**

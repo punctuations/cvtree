@@ -1,8 +1,15 @@
-import type { PackageReport, RepoReport } from "./model";
+import type { DeepReport, PackageReport, RepoReport } from "./model";
 
 export async function fetchReport(query: string): Promise<PackageReport | RepoReport> {
-  const url = `/api/search?q=${encodeURIComponent(query)}`;
+  return request<PackageReport | RepoReport>(`/api/search?q=${encodeURIComponent(query)}`);
+}
 
+export async function fetchDeepReport(query: string, depth?: number): Promise<DeepReport> {
+  const suffix = depth === undefined ? "" : `&depth=${depth}`;
+  return request<DeepReport>(`/api/deepsearch?q=${encodeURIComponent(query)}${suffix}`);
+}
+
+async function request<T>(url: string): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url);
@@ -18,5 +25,5 @@ export async function fetchReport(query: string): Promise<PackageReport | RepoRe
     throw new Error(message);
   }
 
-  return body as PackageReport | RepoReport;
+  return body as T;
 }

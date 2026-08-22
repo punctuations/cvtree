@@ -57,31 +57,64 @@ link for a different one, which happens today on lodash.
 
 # Web
 
+## Deep search
+
+`/api/deepsearch` resolves a package's dependency tree from the registry and audits every package in
+it. Ranges are resolved by `lib/semver.ts` and `lib/pep440.ts` rather than read from a lockfile, so
+the answer is what a fresh install would get.
+
+- [x] Give it a web view
+- [ ] Decide whether the CLI grows the same thing for a package with no lockfile
+- [ ] Put the deep search mode and depth in the URL, so a result can be shared
+- [ ] Include npm `optionalDependencies`, or say why not
+- [ ] Skip Cargo dependencies whose `target` cannot apply, instead of auditing all of them
+- [ ] Evaluate PEP 508 markers rather than only dropping the ones naming an extra
+- [ ] Report progress for a deep walk, which can take a while on a wide tree
+
+## Trust
+
+Every package in a deep search gets a score out of 4 from advisories per published version, drawn as
+four twelve-stage boxes. The formula is in `lib/trust.ts` and the reasoning is in `web/README.md`.
+
+- [ ] Decide whether the deep report caches trust separately, since advisory totals move faster than
+      a package's dependency tree does
+- [ ] Weight an advisory by severity, or decide the count alone is the honest signal
+- [ ] Consider package age, since a package with 200 versions in a month is not the same as one with
+      200 over ten years
+- [ ] Show trust on the single package view, not only in deep search
+
 ## Convex
 
 The deployment is local, so each developer runs their own backend and the cache is per machine. That
 is fine for development and gives the team no shared benefit, so it is worth deciding early.
 
-The functions and the stored payload shape are verified: a cold read returns null, the mutation
-accepts a real normalized report, and the read returns it intact. The React wiring around them is
-not verified.
+Caching now happens in the route handlers, so the API is cached and not just the browser. The
+functions, the stored payload shape and the hit path are verified against a local backend: a cold
+request writes and reports `x-cvtree-cache: miss`, the next one reports `hit` and returns the same
+report, and eviction deletes stale rows and leaves fresh ones alone.
 
-- [ ] Confirm the cache hit path from the browser, not just through the functions
+- [x] Confirm the cache hit path, end to end through the route handlers
 - [ ] Decide whether to move to a cloud deployment so the cache is shared
-- [ ] Replace `report: v.any()` with a validator matching the normalized model
-- [ ] Stop the browser authoring cache entries, or accept it and say so in the README
-- [ ] Evict rows past the TTL instead of leaving them in the table forever
-- [ ] Put a schema version in the cache key so a model change cannot serve old rows
+- [x] Replace `report: v.any()` with a validator matching the normalized model
+- [x] Stop the browser authoring cache entries
+- [x] Evict rows past the TTL instead of leaving them in the table forever
+- [x] Put a schema version in the cache key so a model change cannot serve old rows
+- [ ] Confirm the browser read path in a real browser, not just the route handlers
+- [ ] Decide what to do when a report is too large to store, beyond skipping the write
 
 ## Tests
 
-There are no JavaScript tests at all, and the OSV client, CVSS scoring and normalization now live
-here as well as in Rust. The CVSS scoring is the piece most likely to drift silently.
+`npm test` runs `node --test` with type stripping, so there is no framework to install. It covers the
+range resolvers and nothing else. The CVSS scoring is still the piece most likely to drift silently.
 
+- [x] Test the npm and Cargo range resolution in `lib/semver.ts`
+- [x] Test the PEP 440 version and specifier handling in `lib/pep440.ts`
+- [x] Test the trust scoring and the box stages in `lib/trust.ts`
 - [ ] Test `cvssV3BaseScore` against known vectors, mirroring the Rust cases
 - [ ] Test normalization against OSV fixtures: severity fallback, withdrawn, version lists, GIT ranges
 - [ ] Test the query parser in `lib/spec.ts`
-- [ ] Test the three route handlers, including the 400, 404 and 502 paths
+- [ ] Test the route handlers, including the 400, 404 and 502 paths
+- [ ] Test the deep walk against a fixture registry: depth limits, cycles, the node cap, unresolved
 - [ ] Test the cache fallthrough in `useLookup.ts`: hit, miss, and the deadline path when Convex is
       unreachable
 
@@ -103,8 +136,11 @@ source will be down for most visitors. The report says which source answered, an
 back to whichever one did.
 
 - [ ] Set `GITHUB_TOKEN` wherever the site is deployed
-- [ ] Cache repository reports, since they are not in the Convex package cache today
+- [ ] Cache repository reports, since they are not in the Convex package cache today, while package
+      and deep reports are
 - [ ] Decide whether the CLI gets repository search too
+- [ ] Decide what deep search on a repository should mean, since it is a 400 today. Resolving a
+      repository to its published package is a guess, and the wrong guess audits the wrong tree.
 
 ## Interface
 
@@ -117,14 +153,15 @@ back to whichever one did.
 The port did not carry over everything the Rust client does. These are gaps against the original,
 not new ideas.
 
-- [ ] Add a timeout to the OSV and registry requests, since `fetch` has no default and the Rust
+- [x] Add a timeout to the OSV and registry requests, since `fetch` has no default and the Rust
       client uses 30 seconds
 - [ ] Make `/api/health` verify OSV is reachable, or rename it so it reads as a liveness check only
 - [ ] Decide what protects OSV from repeated uncached searches, given the cache is optional
 
 ## Shipping
 
-- [ ] Add a CI job running `tsc --noEmit`, `eslint` and `next build`
+- [ ] Add a CI job running `npm test`, `tsc --noEmit`, `eslint` and `next build`. Nothing is
+      prerendered against the network any more, so the build needs no OSV access.
 - [ ] Deploy the site, which now needs nothing but network access to OSV
 
 ## Two implementations
@@ -133,7 +170,8 @@ The OSV client, the CVSS scoring and the normalization exist in Rust and in Type
 identical JSON today: `cvtree search <package> --json` and `GET /api/search?q=<package>` return the
 same document. Nothing enforces that, so it will drift.
 
-- [ ] Add a CI check that diffs `cvtree search --json` against `/api/search` on a fixed package set
+- [ ] Add a CI check that diffs `cvtree search --json` against `/api/search` on a fixed package set,
+      comparing parsed JSON, since a cached response orders its keys differently
 - [ ] Keep the normalized models in step whenever either side changes
 - [ ] Revisit whether both implementations should exist at all once the CLI settles
 

@@ -1,3 +1,5 @@
+import { CACHE_SCHEMA_VERSION } from "@/convex/cache";
+
 import type { Ecosystem } from "./model";
 
 export interface PackageQuery {
@@ -124,6 +126,17 @@ export function parseQuery(input: string): ParseResult {
   return { ok: true, query: { kind: "package", ecosystem, name, version } };
 }
 
+export { CACHE_SCHEMA_VERSION };
+
 export function cacheKey(ecosystem: string, name: string, version: string): string {
-  return `${ecosystem}/${name}/${version}`;
+  return `v${CACHE_SCHEMA_VERSION}:${ecosystem}/${name}/${version}`;
+}
+
+export function deepCacheKey(
+  ecosystem: string,
+  name: string,
+  version: string,
+  depth: number,
+): string {
+  return `v${CACHE_SCHEMA_VERSION}:deep:${ecosystem}/${name}/${version}:d${depth}`;
 }

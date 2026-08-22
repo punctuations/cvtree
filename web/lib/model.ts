@@ -52,6 +52,89 @@ export interface PackageReport {
   vulnerabilities: Vulnerability[];
 }
 
+export interface SeverityCounts {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  unknown: number;
+}
+
+export interface Finding {
+  package: string;
+  version: string;
+  ecosystem: Ecosystem;
+  id: string;
+  aliases?: string[];
+  severity: Severity | null;
+  cvss_score?: number;
+  summary?: string;
+  fixed_versions?: string[];
+  affected?: AffectedRange[];
+  references?: Reference[];
+  path: string[];
+}
+
+export interface UnresolvedRequirement {
+  name: string;
+  range: string;
+  parent: string;
+  reason: string;
+}
+
+export interface PackageTrust {
+  name: string;
+  version: string;
+  ecosystem: Ecosystem;
+  depth: number;
+  path: string[];
+  advisories: number;
+  versions: number;
+  vulnerability_count: number;
+  trust: number | null;
+}
+
+export interface DeepReport {
+  package: string;
+  version: string;
+  ecosystem: Ecosystem;
+  depth: number;
+  requested_depth: number;
+  dependencies: number;
+  vulnerable_dependencies: number;
+  summary: SeverityCounts;
+  max_severity: Severity | null;
+  trust: number | null;
+  lowest_trust: number | null;
+  truncated: boolean;
+  unresolved: UnresolvedRequirement[];
+  packages: PackageTrust[];
+  vulnerabilities: Finding[];
+}
+
+export function emptyCounts(): SeverityCounts {
+  return { critical: 0, high: 0, medium: 0, low: 0, unknown: 0 };
+}
+
+export function recordSeverity(counts: SeverityCounts, severity: Severity | null | undefined) {
+  switch (severity) {
+    case "CRITICAL":
+      counts.critical += 1;
+      break;
+    case "HIGH":
+      counts.high += 1;
+      break;
+    case "MEDIUM":
+      counts.medium += 1;
+      break;
+    case "LOW":
+      counts.low += 1;
+      break;
+    default:
+      counts.unknown += 1;
+  }
+}
+
 export type AdvisorySource = "OSV" | "GitHub";
 
 export interface SourceStatus {
@@ -91,6 +174,14 @@ export function highestSeverity(severities: (Severity | null | undefined)[]): Se
   }
 
   return highest;
+}
+
+export function coordinate(dependency: Dependency): string {
+  return `${dependency.name}@${dependency.version}`;
+}
+
+export function isTransitive(finding: Finding): boolean {
+  return finding.path.length > 1;
 }
 
 export function describeRange(range: AffectedRange): string {

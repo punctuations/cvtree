@@ -49,3 +49,12 @@ export interface OsvQueryResponse {
   vulns?: OsvVulnerability[];
   next_page_token?: string;
 }
+
+export interface OsvBatchResult {
+  vulns?: { id: string; modified?: string }[];
+  next_page_token?: string;
+}
+
+export interface OsvBatchResponse {
+  results?: OsvBatchResult[];
+}
