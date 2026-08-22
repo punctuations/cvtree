@@ -36,17 +36,25 @@ Convex holds one table, `packages`, keyed by `ecosystem/name/version`. A search 
 first, falls through to the Rust API on a miss or a stale entry, and writes the normalized result
 back. Entries older than six hours are treated as misses.
 
-Set it up:
+`convex/_generated` is committed, so the app imports the typed `api` and typechecks without running
+codegen first. Regenerate it with `npx convex dev` whenever you change the functions in `convex/`.
+
+To point at your own deployment:
 
 ```bash
+npx convex login
 npx convex dev
 ```
 
-That logs in, creates the deployment, writes `NEXT_PUBLIC_CONVEX_URL` into `.env.local`, and
-generates `convex/_generated`. Until you run it, `convex/_generated` does not exist, which is why
-`convex/` is excluded from the app's `tsconfig.json` and why `lib/convexFunctions.ts` addresses the
-functions by name through `makeFunctionReference` instead of importing the generated `api`. Once
-codegen has run you can switch those references over to `convex/_generated/api` for end to end types.
+That writes `NEXT_PUBLIC_CONVEX_URL` into `.env.local` and pushes the schema and functions.
+
+To run Convex locally with no account at all, which is useful in CI or a sandbox:
+
+```bash
+CONVEX_AGENT_MODE=anonymous npx convex dev
+```
+
+That downloads a local backend and serves it on port 3210. The mode is in beta.
 
 The cache reads and writes happen in the browser rather than in a Convex action, because actions run
 on Convex's servers and cannot reach a Rust API on localhost.

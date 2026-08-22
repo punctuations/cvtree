@@ -21,7 +21,7 @@ parent/child edges), and the audit reports the path that introduced each vulnera
 ```
 cvtree/   core library: lockfile parsing, the OSV client, normalized models, audit orchestration
 cli/      the cvtree binary, including `cvtree serve` which hosts the JSON API
-app/      the Next.js web app, with Convex caching OSV results
+web/      the Next.js web app, with Convex caching OSV results
 ```
 
 The data flows one way, and each stage has its own module:
@@ -123,10 +123,10 @@ The web app talks to the JSON API hosted by the CLI binary. Run both:
 
 ```bash
 cargo run -- serve            # http://localhost:8080
-cd app && npm install && npm run dev   # http://localhost:3000
+cd web && npm install && npm run dev   # http://localhost:3000
 ```
 
-See `app/README.md` for the Convex cache setup.
+See `web/README.md` for the Convex cache setup.
 
 The API is small and returns the same normalized models as the CLI:
 

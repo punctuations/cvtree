@@ -7,6 +7,8 @@ import { fetchReport, type PackageReport } from "./api";
 import { cachePackage, getCachedPackage } from "./convexFunctions";
 import { cacheKey, parseQuery } from "./spec";
 
+const CACHE_READ_TIMEOUT_MS = 2500;
+
 export type LookupState =
   | { status: "idle" }
   | { status: "loading" }
@@ -78,6 +80,7 @@ export function useDirectLookup(): Lookup {
 export function useCachedLookup(): Lookup {
   const { request, search } = useRequest();
   const [fetched, setFetched] = useState<{ id: number; state: LookupState } | null>(null);
+  const [cacheReadExpired, setCacheReadExpired] = useState<number | null>(null);
 
   const parsed = request ? parseQuery(request.query) : null;
   const key = parsed?.version ? cacheKey(parsed.ecosystem, parsed.name, parsed.version) : null;
@@ -86,7 +89,19 @@ export function useCachedLookup(): Lookup {
   const writeToCache = useMutation(cachePackage);
 
   useEffect(() => {
-    if (!request || (key && cached === undefined) || cached) {
+    if (!request || !key) {
+      return;
+    }
+
+    const timer = setTimeout(() => setCacheReadExpired(request.id), CACHE_READ_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [request, key]);
+
+  useEffect(() => {
+    const waitingForCache =
+      key !== null && cached === undefined && cacheReadExpired !== request?.id;
+
+    if (!request || waitingForCache || cached) {
       return;
     }
 
@@ -116,7 +131,7 @@ export function useCachedLookup(): Lookup {
     return () => {
       cancelled = true;
     };
-  }, [request, key, cached, writeToCache]);
+  }, [request, key, cached, cacheReadExpired, writeToCache]);
 
   if (!request) {
     return { state: { status: "idle" }, search };
