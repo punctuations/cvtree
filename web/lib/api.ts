@@ -1,6 +1,6 @@
-import type { PackageReport } from "./model";
+import type { PackageReport, RepoReport } from "./model";
 
-export async function fetchReport(query: string): Promise<PackageReport> {
+export async function fetchReport(query: string): Promise<PackageReport | RepoReport> {
   const url = `/api/search?q=${encodeURIComponent(query)}`;
 
   let response: Response;
@@ -18,5 +18,5 @@ export async function fetchReport(query: string): Promise<PackageReport> {
     throw new Error(message);
   }
 
-  return body as PackageReport;
+  return body as PackageReport | RepoReport;
 }

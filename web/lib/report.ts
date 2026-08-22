@@ -1,4 +1,4 @@
-import { SEVERITY_RANK, type Ecosystem, type PackageReport, type Severity } from "./model";
+import { highestSeverity, type Ecosystem, type PackageReport } from "./model";
 import { queryOsv } from "./osv/client";
 import { latestVersion } from "./registry";
 
@@ -18,16 +18,4 @@ export async function packageReport(
     max_severity: highestSeverity(vulnerabilities.map((item) => item.severity)),
     vulnerabilities,
   };
-}
-
-function highestSeverity(severities: (Severity | null | undefined)[]): Severity | null {
-  let highest: Severity | null = null;
-
-  for (const severity of severities) {
-    if (severity && (!highest || SEVERITY_RANK[severity] > SEVERITY_RANK[highest])) {
-      highest = severity;
-    }
-  }
-
-  return highest;
 }

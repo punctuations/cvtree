@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { CvtreeError, errorResponse } from "@/lib/errors";
 import { packageReport } from "@/lib/report";
+import { repoReport } from "@/lib/repoReport";
 import { parseEcosystem, parseQuery, unknownEcosystem } from "@/lib/spec";
 
 export async function GET(request: NextRequest) {
@@ -17,6 +18,10 @@ export async function GET(request: NextRequest) {
     const parsed = parseQuery(input);
     if (!parsed.ok) {
       throw new CvtreeError(parsed.message, 400);
+    }
+
+    if (parsed.query.kind === "repo") {
+      return Response.json(await repoReport(parsed.query.owner, parsed.query.name));
     }
 
     const requested = request.nextUrl.searchParams.get("ecosystem");

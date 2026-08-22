@@ -4,15 +4,11 @@ import { useState, type FormEvent, type ReactNode } from "react";
 
 import { useCachedLookup, useDirectLookup, type Lookup } from "@/lib/useLookup";
 
+import { isRepoReport } from "@/lib/model";
+
 import { cacheEnabled } from "./ConvexClientProvider";
 import { Report } from "./Report";
-
-const EXAMPLES = [
-  "lodash@4.17.15",
-  "npm:express@4.17.1",
-  "cargo:time@0.1.44",
-  "pip:pyyaml@5.3.1",
-];
+import { RepoReport } from "./RepoReport";
 
 export function Search({ wordmark }: { wordmark: ReactNode }) {
   return cacheEnabled ? <CachedSearch wordmark={wordmark} /> : <DirectSearch wordmark={wordmark} />;
@@ -27,7 +23,13 @@ function DirectSearch({ wordmark }: { wordmark: ReactNode }) {
   return <SearchView wordmark={wordmark} lookup={useDirectLookup()} />;
 }
 
-const SUGGESTIONS = ["lodash@4.17.15", "express@4.17.1", "cargo:time@0.1.44", "minimist@1.2.5"];
+const SUGGESTIONS = [
+  "lodash@4.17.15",
+  "express@4.17.1",
+  "cargo:time@0.1.44",
+  "pip:pyyaml@5.3.1",
+  "axios/axios",
+];
 
 function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup }) {
   const [input, setInput] = useState("");
@@ -83,7 +85,11 @@ function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup 
       </section>
 
       {state.status === "ready" ? (
-        <Report report={state.report} cached={state.cached} />
+        isRepoReport(state.report) ? (
+          <RepoReport report={state.report} />
+        ) : (
+          <Report report={state.report} cached={state.cached} />
+        )
       ) : null}
     </>
   );
