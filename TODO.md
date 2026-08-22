@@ -120,11 +120,27 @@ range resolvers and nothing else. The CVSS scoring is still the piece most likel
 
 ## Product
 
-The site only does single package search, and the tree has no web equivalent. Whether the site
-should audit a whole project is a product decision rather than just work.
+The site does single package search and github repository search. The tree has no web equivalent.
+Whether the site should audit a whole project is a product decision rather than just work.
 
 - [ ] Decide whether the site accepts a lockfile, by upload or paste
 - [ ] Decide whether the tree gets a web view
+
+## Repository search
+
+Repository search queries OSV over the `GIT` ecosystem and the github repository advisories
+endpoint, then merges the two on GHSA id and CVE alias. It is web only, the CLI has no equivalent.
+
+Without `GITHUB_TOKEN` the github side gets 60 requests an hour per IP, so on a deployed site that
+source will be down for most visitors. The report says which source answered, and the merge falls
+back to whichever one did.
+
+- [ ] Set `GITHUB_TOKEN` wherever the site is deployed
+- [ ] Cache repository reports, since they are not in the Convex package cache today, while package
+      and deep reports are
+- [ ] Decide whether the CLI gets repository search too
+- [ ] Decide what deep search on a repository should mean, since it is a 400 today. Resolving a
+      repository to its published package is a guess, and the wrong guess audits the wrong tree.
 
 ## Interface
 

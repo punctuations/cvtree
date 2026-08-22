@@ -6,9 +6,10 @@ use cvtree::Severity;
 static ENABLED: OnceLock<bool> = OnceLock::new();
 
 pub fn init(disable: bool) {
-    let enabled = !disable
-        && std::env::var_os("NO_COLOR").is_none()
-        && (std::env::var_os("CLICOLOR_FORCE").is_some() || std::io::stdout().is_terminal());
+    let enabled =
+        !disable &&
+        std::env::var_os("NO_COLOR").is_none() &&
+        (std::env::var_os("CLICOLOR_FORCE").is_some() || std::io::stdout().is_terminal());
     let _ = ENABLED.set(enabled);
 }
 
@@ -34,6 +35,10 @@ pub fn cyan(text: &str) -> String {
 
 pub fn green(text: &str) -> String {
     paint("32", text)
+}
+
+pub fn yellow(text: &str) -> String {
+    paint("33", text)
 }
 
 pub fn red(text: &str) -> String {

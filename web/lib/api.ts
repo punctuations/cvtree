@@ -1,7 +1,7 @@
-import type { DeepReport, PackageReport } from "./model";
+import type { DeepReport, PackageReport, RepoReport } from "./model";
 
-export async function fetchReport(query: string): Promise<PackageReport> {
-  return request<PackageReport>(`/api/search?q=${encodeURIComponent(query)}`);
+export async function fetchReport(query: string): Promise<PackageReport | RepoReport> {
+  return request<PackageReport | RepoReport>(`/api/search?q=${encodeURIComponent(query)}`);
 }
 
 export async function fetchDeepReport(query: string, depth?: number): Promise<DeepReport> {

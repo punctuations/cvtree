@@ -135,9 +135,36 @@ export function recordSeverity(counts: SeverityCounts, severity: Severity | null
   }
 }
 
-export function highestSeverity(
-  severities: (Severity | null | undefined)[],
-): Severity | null {
+export type AdvisorySource = "OSV" | "GitHub";
+
+export interface SourceStatus {
+  name: AdvisorySource;
+  ok: boolean;
+  count: number;
+  message?: string;
+}
+
+export interface RepoAdvisory extends Omit<Vulnerability, "package"> {
+  sources: AdvisorySource[];
+  affected_packages?: Dependency[];
+}
+
+export interface RepoReport {
+  repo: string;
+  owner: string;
+  name: string;
+  url: string;
+  advisory_count: number;
+  max_severity: Severity | null;
+  sources: SourceStatus[];
+  advisories: RepoAdvisory[];
+}
+
+export function isRepoReport(report: PackageReport | RepoReport): report is RepoReport {
+  return "repo" in report;
+}
+
+export function highestSeverity(severities: (Severity | null | undefined)[]): Severity | null {
   let highest: Severity | null = null;
 
   for (const severity of severities) {
@@ -173,13 +200,13 @@ export function describeRange(range: AffectedRange): string {
   return parts.length > 0 ? parts.join(", ") : "all versions";
 }
 
-export function identifiers(advisory: { id: string; aliases?: string[] }): string[] {
-  const cves = (advisory.aliases ?? []).filter((alias) => alias.startsWith("CVE-"));
-  return [...new Set([...cves, advisory.id])];
+export function identifiers(vulnerability: Pick<Vulnerability, "id" | "aliases">): string[] {
+  const cves = (vulnerability.aliases ?? []).filter((alias) => alias.startsWith("CVE-"));
+  return [...new Set([...cves, vulnerability.id])];
 }
 
-export function advisoryUrl(advisory: { references?: Reference[] }): string | null {
-  const references = advisory.references ?? [];
-  const found = references.find((reference) => reference.kind === "ADVISORY");
-  return (found ?? references[0])?.url ?? null;
+export function advisoryUrl(vulnerability: Pick<Vulnerability, "references">): string | null {
+  const references = vulnerability.references ?? [];
+  const advisory = references.find((reference) => reference.kind === "ADVISORY");
+  return (advisory ?? references[0])?.url ?? null;
 }

@@ -55,6 +55,10 @@ GET /api/deepsearch?q=pip:requests@2.25.0
 `depth` is how many levels below the root to walk, default 2, clamped to 6. Depth 0 audits only the
 package itself. The walk stops at 400 unique packages and sets `truncated` when it does.
 
+Deep search takes a package, not a repository. A repository query such as `axios/axios` is a 400
+here, because the walk starts from a resolved package version and a repository does not have one.
+Repository search is `/api/search` and `/api/repo`.
+
 The response is the audit report the CLI produces, with the root package in place of the project and
 three extra fields:
 

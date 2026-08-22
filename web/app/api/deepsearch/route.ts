@@ -23,6 +23,13 @@ export async function GET(request: NextRequest) {
       throw new CvtreeError(parsed.message, 400);
     }
 
+    if (parsed.query.kind === "repo") {
+      throw new CvtreeError(
+        "deep search takes a package, not a repository, such as express@4.17.1",
+        400,
+      );
+    }
+
     const requested = request.nextUrl.searchParams.get("ecosystem");
     const override = requested ? parseEcosystem(requested) : null;
     if (requested && !override) {

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 
 import { fetchReport } from "./api";
-import type { PackageReport } from "./model";
+import type { PackageReport, RepoReport } from "./model";
 import { getCachedPackage } from "./convexFunctions";
 import { cacheKey, parseQuery } from "./spec";
 
@@ -13,7 +13,7 @@ const CACHE_READ_TIMEOUT_MS = 2500;
 export type LookupState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "ready"; report: PackageReport; cached: boolean }
+  | { status: "ready"; report: PackageReport | RepoReport; cached: boolean }
   | { status: "error"; message: string };
 
 export interface Lookup {
@@ -85,7 +85,7 @@ export function useCachedLookup(): Lookup {
 
   const parsed = request ? parseQuery(request.query) : null;
   const key =
-    parsed?.ok && parsed.query.version
+    parsed?.ok && parsed.query.kind === "package" && parsed.query.version
       ? cacheKey(parsed.query.ecosystem ?? "npm", parsed.query.name, parsed.query.version)
       : null;
 
