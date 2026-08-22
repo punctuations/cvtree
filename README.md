@@ -54,12 +54,36 @@ Audit a project:
 ```bash
 cd my-project
 cvtree audit
+cvtree audit app/
 cvtree audit --json
 cvtree audit --fail-on high
 ```
 
+Find nested projects without auditing them yet:
+
+```bash
+cvtree crawl app/
+cvtree crawl app/ --stop=15
+cvtree crawl app/ --json
+```
+
+`crawl` walks a directory tree, looks for the supported lockfiles, and stops after the optional
+`--stop` count of directories scanned.
+
 `audit` walks up from the given directory (default `.`) until it finds a supported lockfile:
 
+Leak detection
+
+`cvtree audit` can optionally run a lightweight leak-detection pass that scans project files for likely
+API keys, private key headers, and other high-entropy tokens outside of `.env`. To enable it:
+
+```bash
+cvtree audit --leak
+cvtree audit app/ --leak --json
+```
+
+If a `.env` file exists but `.gitignore` does not mention it, cvtree will warn about potential
+sensitive data being committed.
 ```
 package-lock.json
 Cargo.lock
