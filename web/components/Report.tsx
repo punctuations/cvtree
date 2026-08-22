@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 import {
   advisoryUrl,
   describeRange,
@@ -7,6 +11,8 @@ import {
   type Severity,
   type Vulnerability,
 } from "@/lib/model";
+
+import { stagger, tile as tileMotion, tileHover } from "./motion";
 
 const ORDER: (Severity | "UNKNOWN")[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
 
@@ -40,17 +46,17 @@ export function Report({ report, cached }: { report: PackageReport; cached: bool
   const count = report.vulnerability_count;
 
   return (
-    <section className="report">
-      <article className="tile tile-identity">
+    <motion.section className="report" variants={stagger} initial="hidden" animate="shown">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-identity">
         <h2>{report.package}</h2>
         <p className="meta">
           <span className="tag">{report.ecosystem}</span>
           <span className="version">{report.version}</span>
         </p>
         {cached ? <p className="cache-note">served from cache</p> : null}
-      </article>
+      </motion.article>
 
-      <article className="tile tile-summary">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-summary">
         {count === 0 ? (
           <p className="clean">No known vulnerabilities</p>
         ) : (
@@ -71,12 +77,12 @@ export function Report({ report, cached }: { report: PackageReport; cached: bool
             </ul>
           </>
         )}
-      </article>
+      </motion.article>
 
       {vulnerabilities.map((vulnerability) => (
         <Tile key={vulnerability.id} vulnerability={vulnerability} />
       ))}
-    </section>
+    </motion.section>
   );
 }
 
@@ -86,7 +92,11 @@ function Tile({ vulnerability }: { vulnerability: Vulnerability }) {
   const fixed = vulnerability.fixed_versions ?? [];
 
   return (
-    <article className={`tile vulnerability${isWide(vulnerability.severity) ? " tile-wide" : ""}`}>
+    <motion.article
+      variants={tileMotion}
+      {...tileHover}
+      className={`tile vulnerability${isWide(vulnerability.severity) ? " tile-wide" : ""}`}
+    >
       <div className="vulnerability-head">
         <span className={severityClass(vulnerability.severity)}>{label(vulnerability.severity)}</span>
         {typeof vulnerability.cvss_score === "number" ? (
@@ -122,6 +132,6 @@ function Tile({ vulnerability }: { vulnerability: Vulnerability }) {
           View advisory
         </a>
       ) : null}
-    </article>
+    </motion.article>
   );
 }
