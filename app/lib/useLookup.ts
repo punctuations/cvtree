@@ -1,0 +1,137 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+
+import { fetchReport, type PackageReport } from "./api";
+import { cachePackage, getCachedPackage } from "./convexFunctions";
+import { cacheKey, parseQuery } from "./spec";
+
+export type LookupState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; report: PackageReport; cached: boolean }
+  | { status: "error"; message: string };
+
+export interface Lookup {
+  state: LookupState;
+  search: (query: string) => void;
+}
+
+interface Request {
+  query: string;
+  id: number;
+}
+
+function useRequest() {
+  const [request, setRequest] = useState<Request | null>(null);
+
+  const search = useCallback((query: string) => {
+    const trimmed = query.trim();
+    if (trimmed) {
+      setRequest((previous) => ({ query: trimmed, id: (previous?.id ?? 0) + 1 }));
+    }
+  }, []);
+
+  return { request, search };
+}
+
+export function useDirectLookup(): Lookup {
+  const { request, search } = useRequest();
+  const [result, setResult] = useState<{ id: number; state: LookupState } | null>(null);
+
+  useEffect(() => {
+    if (!request) {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchReport(request.query)
+      .then((report) => {
+        if (!cancelled) {
+          setResult({ id: request.id, state: { status: "ready", report, cached: false } });
+        }
+      })
+      .catch((error: Error) => {
+        if (!cancelled) {
+          setResult({ id: request.id, state: { status: "error", message: error.message } });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request]);
+
+  if (!request) {
+    return { state: { status: "idle" }, search };
+  }
+
+  if (result && result.id === request.id) {
+    return { state: result.state, search };
+  }
+
+  return { state: { status: "loading" }, search };
+}
+
+export function useCachedLookup(): Lookup {
+  const { request, search } = useRequest();
+  const [fetched, setFetched] = useState<{ id: number; state: LookupState } | null>(null);
+
+  const parsed = request ? parseQuery(request.query) : null;
+  const key = parsed?.version ? cacheKey(parsed.ecosystem, parsed.name, parsed.version) : null;
+
+  const cached = useQuery(getCachedPackage, key ? { key } : "skip");
+  const writeToCache = useMutation(cachePackage);
+
+  useEffect(() => {
+    if (!request || (key && cached === undefined) || cached) {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchReport(request.query)
+      .then((report) => {
+        if (cancelled) {
+          return;
+        }
+        setFetched({ id: request.id, state: { status: "ready", report, cached: false } });
+        void writeToCache({
+          key: cacheKey(report.ecosystem, report.package, report.version),
+          ecosystem: report.ecosystem,
+          name: report.package,
+          version: report.version,
+          vulnerabilityCount: report.vulnerability_count,
+          report,
+        }).catch(() => undefined);
+      })
+      .catch((error: Error) => {
+        if (!cancelled) {
+          setFetched({ id: request.id, state: { status: "error", message: error.message } });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request, key, cached, writeToCache]);
+
+  if (!request) {
+    return { state: { status: "idle" }, search };
+  }
+
+  if (fetched && fetched.id === request.id) {
+    return { state: fetched.state, search };
+  }
+
+  if (cached) {
+    return {
+      state: { status: "ready", report: cached.report, cached: true },
+      search,
+    };
+  }
+
+  return { state: { status: "loading" }, search };
+}
