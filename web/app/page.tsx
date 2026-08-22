@@ -1,23 +1,14 @@
-import { Hedge } from "@/components/Hedge";
+import { Scene } from "@/components/Scene";
 import { Search } from "@/components/Search";
 import { Wordmark } from "@/components/Wordmark";
 
 export default function Home() {
   return (
     <>
+      <Scene />
       <main>
-        <header className="hero">
-          <Wordmark />
-          <p className="tagline">Search a dependency for vulnerabilities</p>
-        </header>
-        <Search />
+        <Search wordmark={<Wordmark />} />
       </main>
-      <footer className="garden">
-        <Hedge />
-        <p className="credit">
-          Vulnerability data from <a href="https://osv.dev">OSV</a>
-        </p>
-      </footer>
     </>
   );
 }
