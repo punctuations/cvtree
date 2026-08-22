@@ -90,6 +90,14 @@ mod tests {
             PackageSpec::parse("crates.io:time").unwrap(),
             spec("time", None, Some(Ecosystem::CratesIo))
         );
+        assert_eq!(
+            PackageSpec::parse("pip:flask@0.12").unwrap(),
+            spec("flask", Some("0.12"), Some(Ecosystem::PyPi))
+        );
+        assert_eq!(
+            PackageSpec::parse("pypi:flask").unwrap(),
+            spec("flask", None, Some(Ecosystem::PyPi))
+        );
     }
 
     #[test]
@@ -112,6 +120,6 @@ mod tests {
     fn rejects_bad_input() {
         assert!(PackageSpec::parse("").is_err());
         assert!(PackageSpec::parse("lodash@").is_err());
-        assert!(PackageSpec::parse("pypi:flask").is_err());
+        assert!(PackageSpec::parse("gem:rails").is_err());
     }
 }

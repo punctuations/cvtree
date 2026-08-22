@@ -3,11 +3,13 @@ use crate::model::Ecosystem;
 
 pub const NPM_BASE_URL: &str = "https://registry.npmjs.org";
 pub const CRATES_BASE_URL: &str = "https://crates.io/api/v1";
+pub const PYPI_BASE_URL: &str = "https://pypi.org/pypi";
 
 pub struct RegistryClient {
     http: reqwest::Client,
     npm_base_url: String,
     crates_base_url: String,
+    pypi_base_url: String,
 }
 
 impl RegistryClient {
@@ -21,12 +23,19 @@ impl RegistryClient {
             http,
             npm_base_url: NPM_BASE_URL.to_string(),
             crates_base_url: CRATES_BASE_URL.to_string(),
+            pypi_base_url: PYPI_BASE_URL.to_string(),
         })
     }
 
-    pub fn with_base_urls(mut self, npm: impl Into<String>, crates: impl Into<String>) -> Self {
+    pub fn with_base_urls(
+        mut self,
+        npm: impl Into<String>,
+        crates: impl Into<String>,
+        pypi: impl Into<String>,
+    ) -> Self {
         self.npm_base_url = npm.into().trim_end_matches('/').to_string();
         self.crates_base_url = crates.into().trim_end_matches('/').to_string();
+        self.pypi_base_url = pypi.into().trim_end_matches('/').to_string();
         self
     }
 
@@ -34,6 +43,7 @@ impl RegistryClient {
         let url = match ecosystem {
             Ecosystem::Npm => format!("{}/{name}/latest", self.npm_base_url),
             Ecosystem::CratesIo => format!("{}/crates/{name}", self.crates_base_url),
+            Ecosystem::PyPi => format!("{}/{name}/json", self.pypi_base_url),
         };
 
         let fail = |message: String| Error::VersionResolution {
@@ -73,6 +83,7 @@ fn version_from(body: &serde_json::Value, ecosystem: Ecosystem) -> Option<String
             item.get("max_stable_version")
                 .or_else(|| item.get("max_version"))
         }),
+        Ecosystem::PyPi => body.get("info").and_then(|item| item.get("version")),
     };
     value?.as_str().map(str::to_string)
 }
@@ -93,5 +104,11 @@ mod tests {
             "crate": { "max_version": "2.0.0-beta.1", "max_stable_version": "1.9.0" }
         });
         assert_eq!(version_from(&body, Ecosystem::CratesIo).unwrap(), "1.9.0");
+    }
+
+    #[test]
+    fn reads_pypi_version() {
+        let body = serde_json::json!({ "info": { "name": "flask", "version": "3.0.0" } });
+        assert_eq!(version_from(&body, Ecosystem::PyPi).unwrap(), "3.0.0");
     }
 }

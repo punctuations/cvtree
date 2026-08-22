@@ -23,7 +23,7 @@ pub enum Error {
     #[error("{0}")]
     InvalidPackageSpec(String),
 
-    #[error("unknown ecosystem '{0}' (supported: npm, crates.io)")]
+    #[error("unknown ecosystem '{0}' (supported: npm, crates.io, PyPI)")]
     UnknownEcosystem(String),
 
     #[error("failed to query {source_name}: {message}")]

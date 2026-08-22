@@ -12,22 +12,26 @@ pub enum Ecosystem {
     Npm,
     #[serde(rename = "crates.io")]
     CratesIo,
+    #[serde(rename = "PyPI")]
+    PyPi,
 }
 
 impl Ecosystem {
-    pub const ALL: [Ecosystem; 2] = [Ecosystem::Npm, Ecosystem::CratesIo];
+    pub const ALL: [Ecosystem; 3] = [Ecosystem::Npm, Ecosystem::CratesIo, Ecosystem::PyPi];
 
     pub fn osv_name(&self) -> &'static str {
         match self {
             Ecosystem::Npm => "npm",
             Ecosystem::CratesIo => "crates.io",
+            Ecosystem::PyPi => "PyPI",
         }
     }
 
-    pub fn lockfile(&self) -> &'static str {
+    pub fn lockfile(&self) -> Option<&'static str> {
         match self {
-            Ecosystem::Npm => "package-lock.json",
-            Ecosystem::CratesIo => "Cargo.lock",
+            Ecosystem::Npm => Some("package-lock.json"),
+            Ecosystem::CratesIo => Some("Cargo.lock"),
+            Ecosystem::PyPi => None, // TODO: add reuirements.txt
         }
     }
 }
@@ -45,6 +49,7 @@ impl FromStr for Ecosystem {
         match s.to_ascii_lowercase().as_str() {
             "npm" | "node" | "javascript" => Ok(Ecosystem::Npm),
             "crates.io" | "crates" | "cargo" | "rust" => Ok(Ecosystem::CratesIo),
+            "pypi" | "pip" | "python" => Ok(Ecosystem::PyPi),
             other => Err(Error::UnknownEcosystem(other.to_string())),
         }
     }
