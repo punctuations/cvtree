@@ -2,6 +2,8 @@ import {
   SEVERITY_RANK,
   type AffectedRange,
   type Dependency,
+  type Ecosystem,
+  type RepoAdvisory,
   type Severity,
   type Vulnerability,
 } from "@/lib/model";
@@ -103,6 +105,86 @@ export function normalize(raw: OsvVulnerability, dependency: Dependency): Vulner
     cvss_vector: cvssVector,
     affected: affected.length > 0 ? affected : undefined,
     fixed_versions: fixedVersions.length > 0 ? fixedVersions : undefined,
+    references: references.length > 0 ? references : undefined,
+    published: raw.published,
+    modified: raw.modified,
+    withdrawn: raw.withdrawn,
+  };
+}
+
+const REPO_ECOSYSTEMS: Record<string, Ecosystem> = {
+  npm: "npm",
+  "crates.io": "crates.io",
+  pypi: "PyPI",
+};
+
+export function normalizeRepoAdvisory(raw: OsvVulnerability): RepoAdvisory {
+  const entries = raw.affected ?? [];
+
+  const affected: AffectedRange[] = [];
+  const fixedVersions: string[] = [];
+  const packages: Dependency[] = [];
+
+  for (const entry of entries) {
+    for (const range of entry.ranges ?? []) {
+      if (range.type === "GIT") {
+        continue;
+      }
+      for (const item of rangesFromEvents(range.events ?? [])) {
+        if (item.fixed && !fixedVersions.includes(item.fixed)) {
+          fixedVersions.push(item.fixed);
+        }
+        if (!affected.some((existing) => sameRange(existing, item))) {
+          affected.push(item);
+        }
+      }
+    }
+
+    const name = entry.package?.name;
+    const ecosystem = REPO_ECOSYSTEMS[(entry.package?.ecosystem ?? "").split(":")[0].toLowerCase()];
+    if (name && ecosystem && !packages.some((item) => item.name === name && item.ecosystem === ecosystem)) {
+      packages.push({ name, version: "", ecosystem });
+    }
+  }
+
+  const vectors = [...(raw.severity ?? []), ...entries.flatMap((entry) => entry.severity ?? [])];
+
+  let cvssVector: string | undefined;
+  let cvssScore: number | undefined;
+  for (const candidate of vectors) {
+    if (candidate.type !== "CVSS_V3" || !candidate.score) {
+      continue;
+    }
+    const score = cvssV3BaseScore(candidate.score);
+    if (score !== null) {
+      cvssVector = candidate.score;
+      cvssScore = score;
+      break;
+    }
+  }
+
+  const severity =
+    (cvssScore !== undefined ? severityFromScore(cvssScore) : null) ??
+    databaseSpecificSeverity(raw);
+
+  const aliases = raw.aliases ?? [];
+  const references = (raw.references ?? []).map((reference) => ({
+    kind: reference.type ?? "",
+    url: reference.url,
+  }));
+
+  return {
+    id: raw.id,
+    aliases: aliases.length > 0 ? aliases : undefined,
+    sources: ["OSV"],
+    summary: raw.summary,
+    details: raw.details,
+    severity: severity ?? undefined,
+    cvss_score: cvssScore,
+    cvss_vector: cvssVector,
+    affected: affected.length > 0 ? affected : undefined,
+    fixed_versions: fixedVersions.length > 0 ? fixedVersions : undefined,
+    affected_packages: packages.length > 0 ? packages : undefined,
     references: references.length > 0 ? references : undefined,
     published: raw.published,
     modified: raw.modified,

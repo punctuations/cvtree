@@ -9,14 +9,24 @@ const MAX_PAGES = 5;
 const USER_AGENT = "cvtree-web/0.1.0";
 
 export async function queryOsv(dependency: Dependency): Promise<Vulnerability[]> {
+  const raw = await queryAll({
+    package: { name: dependency.name, ecosystem: dependency.ecosystem },
+    version: dependency.version,
+  });
+
+  return normalizeAll(raw, dependency);
+}
+
+export async function queryOsvRepo(repoUrl: string): Promise<OsvVulnerability[]> {
+  return queryAll({ package: { name: repoUrl, ecosystem: "GIT" } });
+}
+
+async function queryAll(query: Record<string, unknown>): Promise<OsvVulnerability[]> {
   const raw: OsvVulnerability[] = [];
   let pageToken: string | undefined;
 
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const body: Record<string, unknown> = {
-      package: { name: dependency.name, ecosystem: dependency.ecosystem },
-      version: dependency.version,
-    };
+    const body: Record<string, unknown> = { ...query };
     if (pageToken) {
       body.page_token = pageToken;
     }
@@ -30,7 +40,7 @@ export async function queryOsv(dependency: Dependency): Promise<Vulnerability[]>
     pageToken = response.next_page_token;
   }
 
-  return normalizeAll(raw, dependency);
+  return raw;
 }
 
 async function post(path: string, body: Record<string, unknown>): Promise<OsvQueryResponse> {
