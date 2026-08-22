@@ -1,0 +1,19 @@
+[package]
+name = "cvtree"
+description = "Dependency vulnerability auditing against the OSV database"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "http2", "charset"] }
+futures = "0.3"
+toml = "1"
+async-trait = "0.1.92"
+
+[dev-dependencies]
+tempfile = "3.27.0"
+tokio = { workspace = true }
