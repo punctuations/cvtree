@@ -5,30 +5,29 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 export const stagger: Variants = {
   hidden: {},
   shown: {
-    transition: { staggerChildren: 0.07, delayChildren: 0.04 },
+    transition: { staggerChildren: 0.05, delayChildren: 0.02 },
   },
 };
 
 export const rise: Variants = {
-  hidden: { opacity: 0, y: 14 },
+  hidden: { opacity: 0, y: 8 },
   shown: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.45, ease: EASE },
+    transition: { duration: 0.36, ease: EASE },
+  },
+};
+
+export const tile: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  shown: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.36, ease: EASE },
   },
 };
 
 export const tileHover = {
-  whileHover: { y: -3 },
-  transition: { type: "spring" as const, stiffness: 320, damping: 28 },
-};
-
-export const tile: Variants = {
-  hidden: { opacity: 0, y: 20, scale: 0.985 },
-  shown: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.45, ease: EASE },
-  },
+  whileHover: { y: -2 },
+  transition: { duration: 0.18, ease: EASE },
 };

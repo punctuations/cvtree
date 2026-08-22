@@ -37,6 +37,8 @@ const SUGGESTIONS = [
 
 const DEPTHS = [1, 2, 3];
 
+const PRESS = { duration: 0.16, ease: EASE };
+
 function SearchView({
   wordmark,
   lookup,
@@ -90,38 +92,37 @@ function SearchView({
           <motion.button
             type="submit"
             disabled={state.status === "loading"}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 420, damping: 26 }}
+            whileTap={{ scale: 0.98 }}
+            transition={PRESS}
           >
             {state.status === "loading" ? "Searching" : "Search"}
           </motion.button>
         </motion.form>
 
         <motion.div className="modes" variants={rise}>
-          <motion.div className="mode-bar" layout transition={{ duration: 0.3, ease: EASE }}>
+          <motion.div className="mode-bar" layout transition={{ duration: 0.28, ease: EASE }}>
             <motion.button
               type="button"
               className="mode-switch"
               aria-pressed={isDeep}
               onClick={() => setIsDeep((on) => !on)}
-              whileTap={{ scale: 0.97 }}
-              layout
-              transition={{ duration: 0.3, ease: EASE }}
+              whileTap={{ scale: 0.98 }}
+              transition={PRESS}
             >
               Deep search
             </motion.button>
 
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} mode="popLayout">
               {isDeep ? (
                 <motion.div
+                  key="depths"
                   className="depths"
                   role="group"
                   aria-label="Search depth"
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.3, ease: EASE }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: EASE }}
                 >
                   <span className="depths-label">depth</span>
                   {DEPTHS.map((level) => (
@@ -136,7 +137,7 @@ function SearchView({
                         <motion.span
                           className="depth-marker"
                           layoutId="depth-marker"
-                          transition={{ type: "spring", stiffness: 520, damping: 38 }}
+                          transition={{ duration: 0.24, ease: EASE }}
                         />
                       ) : null}
                       <span className="depth-value">{level}</span>
@@ -153,9 +154,9 @@ function SearchView({
             <motion.li key={suggestion} variants={rise}>
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.06, y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                transition={PRESS}
                 onClick={() => {
                   setInput(suggestion);
                   run(suggestion, isDeep, depth);
@@ -167,30 +168,32 @@ function SearchView({
           ))}
         </motion.ul>
 
-        <AnimatePresence>
-          {state.status === "loading" ? (
-            <motion.p
-              className="status"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25, ease: EASE }}
-            >
-              {isDeep ? "Walking the dependency tree" : "Querying OSV"}
-              <motion.span
-                className="status-dots"
-                aria-hidden="true"
-                animate={{ opacity: [0.25, 1, 0.25] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+        <div className="status-slot">
+          <AnimatePresence>
+            {state.status === "loading" ? (
+              <motion.p
+                className="status"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: EASE }}
               >
-                ...
-              </motion.span>
-            </motion.p>
-          ) : null}
-        </AnimatePresence>
+                {isDeep ? "Walking the dependency tree" : "Querying OSV"}
+                <motion.span
+                  className="status-dots"
+                  aria-hidden="true"
+                  animate={{ opacity: [0.25, 1, 0.25] }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  ...
+                </motion.span>
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </motion.section>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {isDeep && deep.state.status === "ready" ? (
           <ReportShell key="deep">
             <DeepReport report={deep.state.report} cached={false} />
@@ -214,10 +217,10 @@ function SearchView({
 function ReportShell({ children }: { children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.4, ease: EASE }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.32, ease: EASE }}
     >
       {children}
     </motion.div>
