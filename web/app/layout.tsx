@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import { MotionProvider } from "@/components/MotionProvider";
+import { ToastProvider } from "@/components/ToastProvider";
 
 import "./globals.css";
 
@@ -13,7 +15,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
       <body>
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <MotionProvider>
+          <ConvexClientProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ConvexClientProvider>
+        </MotionProvider>
       </body>
     </html>
   );

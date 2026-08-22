@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 import {
   advisoryUrl,
   describeRange,
@@ -7,6 +11,8 @@ import {
   type RepoReport as Report,
   type Severity,
 } from "@/lib/model";
+
+import { stagger, tile as tileMotion, tileHover } from "./motion";
 
 const ORDER: (Severity | "UNKNOWN")[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
 
@@ -35,8 +41,8 @@ export function RepoReport({ report }: { report: Report }) {
   const degraded = report.sources.filter((source) => !source.ok);
 
   return (
-    <section className="report">
-      <article className="tile tile-identity">
+    <motion.section className="report" variants={stagger} initial="hidden" animate="shown">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-identity">
         <h2>{report.repo}</h2>
         <p className="meta">
           <span className="tag">github</span>
@@ -44,9 +50,9 @@ export function RepoReport({ report }: { report: Report }) {
             repository
           </a>
         </p>
-      </article>
+      </motion.article>
 
-      <article className="tile tile-summary">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-summary">
         {count === 0 ? (
           <p className="clean">No known advisories</p>
         ) : (
@@ -84,12 +90,12 @@ export function RepoReport({ report }: { report: Report }) {
             {degraded.map((source) => `${source.name}: ${source.message ?? "unavailable"}`).join(" · ")}
           </p>
         ) : null}
-      </article>
+      </motion.article>
 
       {advisories.map((advisory) => (
         <Tile key={advisory.id} advisory={advisory} />
       ))}
-    </section>
+    </motion.section>
   );
 }
 
@@ -100,7 +106,11 @@ function Tile({ advisory }: { advisory: RepoAdvisory }) {
   const packages = advisory.affected_packages ?? [];
 
   return (
-    <article className={`tile vulnerability${advisory.severity === "CRITICAL" ? " tile-wide" : ""}`}>
+    <motion.article
+      variants={tileMotion}
+      {...tileHover}
+      className={`tile vulnerability${advisory.severity === "CRITICAL" ? " tile-wide" : ""}`}
+    >
       <div className="vulnerability-head">
         <span className={severityClass(advisory.severity)}>{label(advisory.severity)}</span>
         {typeof advisory.cvss_score === "number" ? (
@@ -143,6 +153,6 @@ function Tile({ advisory }: { advisory: RepoAdvisory }) {
           View advisory
         </a>
       ) : null}
-    </article>
+    </motion.article>
   );
 }

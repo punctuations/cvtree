@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 import {
   advisoryUrl,
   identifiers,
@@ -8,6 +12,7 @@ import {
   type Severity,
 } from "@/lib/model";
 
+import { stagger, tile as tileMotion, tileHover } from "./motion";
 import { TrustMeter } from "./TrustMeter";
 
 const ORDER: (Severity | "UNKNOWN")[] = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"];
@@ -50,8 +55,8 @@ export function DeepReport({
   const total = findings.length;
 
   return (
-    <section className="report">
-      <article className="tile tile-identity">
+    <motion.section className="report" variants={stagger} initial="hidden" animate="shown">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-identity">
         <h2>{report.package}</h2>
         <p className="meta">
           <span className="tag">{report.ecosystem}</span>
@@ -63,9 +68,9 @@ export function DeepReport({
           {report.truncated ? " (truncated)" : ""}
         </p>
         {cached ? <p className="cache-note">served from cache</p> : null}
-      </article>
+      </motion.article>
 
-      <article className="tile tile-summary">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-summary">
         <div className="trust-headline">
           <TrustMeter score={report.trust} />
           <span>trust</span>
@@ -93,9 +98,9 @@ export function DeepReport({
             </ul>
           </>
         )}
-      </article>
+      </motion.article>
 
-      <article className="tile tile-wide tile-trust">
+      <motion.article variants={tileMotion} {...tileHover} className="tile tile-wide tile-trust">
         <h3>Trust by package</h3>
         <p className="hint">
           Advisories ever filed against a package, over how many versions it has published. Many
@@ -106,14 +111,14 @@ export function DeepReport({
             <TrustRow key={`${entry.name}@${entry.version}`} entry={entry} />
           ))}
         </ul>
-      </article>
+      </motion.article>
 
       {findings.map((finding) => (
         <FindingTile key={`${finding.package}@${finding.version}:${finding.id}`} finding={finding} />
       ))}
 
       {report.unresolved.length > 0 ? (
-        <article className="tile tile-wide">
+        <motion.article variants={tileMotion} {...tileHover} className="tile tile-wide">
           <h3>Unresolved</h3>
           <ul className="unresolved">
             {report.unresolved.map((entry) => (
@@ -127,9 +132,9 @@ export function DeepReport({
               </li>
             ))}
           </ul>
-        </article>
+        </motion.article>
       ) : null}
-    </section>
+    </motion.section>
   );
 }
 
@@ -156,7 +161,11 @@ function FindingTile({ finding }: { finding: Finding }) {
   const url = advisoryUrl(finding);
 
   return (
-    <article className={`tile vulnerability${finding.severity === "CRITICAL" ? " tile-wide" : ""}`}>
+    <motion.article
+      variants={tileMotion}
+      {...tileHover}
+      className={`tile vulnerability${finding.severity === "CRITICAL" ? " tile-wide" : ""}`}
+    >
       <div className="vulnerability-head">
         <span className={severityClass(finding.severity)}>{label(finding.severity)}</span>
         {typeof finding.cvss_score === "number" ? (
@@ -186,6 +195,6 @@ function FindingTile({ finding }: { finding: Finding }) {
           View advisory
         </a>
       ) : null}
-    </article>
+    </motion.article>
   );
 }

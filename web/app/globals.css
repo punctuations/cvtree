@@ -256,18 +256,106 @@ main {
   text-shadow: 0 1px 10px rgba(8, 38, 68, 0.45);
 }
 
-.status.error {
-  max-width: 540px;
-  color: var(--ink);
+.status-dots {
+  display: inline-block;
+  margin-left: 2px;
+}
+
+.toasts {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  width: min(380px, calc(100vw - 48px));
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
   background: var(--paper);
-  border-left: 4px solid var(--critical);
-  border-radius: 10px;
-  padding: 14px 18px;
+  border-left: 4px solid var(--unknown);
+  border-radius: 12px;
+  padding: 13px 12px 14px 16px;
+  overflow: hidden;
+  box-shadow: var(--lift);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.toast:active {
+  cursor: grabbing;
+}
+
+.toast-error {
+  border-left-color: var(--critical);
+}
+
+.toast p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
   font-size: 14px;
-  letter-spacing: 0;
-  text-transform: none;
-  text-shadow: none;
-  box-shadow: var(--lift-soft);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.toast-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.toast-error .toast-label {
+  color: var(--critical);
+}
+
+.toast button {
+  flex: none;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 1px 6px 3px;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.toast button:hover {
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.toast-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  transform-origin: left center;
+  background: var(--unknown);
+  opacity: 0.35;
+}
+
+.toast-error .toast-timer {
+  background: var(--critical);
 }
 
 .report {
@@ -282,6 +370,11 @@ main {
   border-radius: 18px;
   padding: 24px 26px;
   box-shadow: var(--lift-soft);
+  transition: box-shadow 200ms ease;
+}
+
+.tile:hover {
+  box-shadow: var(--lift);
 }
 
 .tile-wide {
@@ -599,38 +692,58 @@ a {
 .modes {
   display: flex;
   align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
   justify-content: center;
 }
 
-.toggle {
+.mode-bar {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 999px;
-  padding: 6px 14px 6px 10px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  overflow: hidden;
   box-shadow: var(--lift-soft);
 }
 
-.toggle input {
-  accent-color: var(--deep);
-  margin: 0;
+.mode-switch {
+  flex: none;
+  border: none;
+  background: transparent;
+  padding: 11px 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-soft);
   cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.mode-switch:hover {
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.mode-switch[aria-pressed="true"] {
+  background: var(--deep);
+  color: #fff;
+}
+
+.mode-switch[aria-pressed="true"]:hover {
+  background: #0d2c45;
 }
 
 .depths {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 999px;
+  gap: 4px;
   padding: 5px 8px;
-  box-shadow: var(--lift-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  border-left: 1px solid var(--edge);
 }
 
 .depths-label {
@@ -642,21 +755,44 @@ a {
 }
 
 .depth {
+  position: relative;
   border: none;
   background: transparent;
-  border-radius: 999px;
-  width: 26px;
-  height: 26px;
+  border-radius: 7px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
   font-family: inherit;
   font-size: 13px;
   color: var(--ink-soft);
   cursor: pointer;
+  transition: color 140ms ease;
+}
+
+.depth:hover {
+  color: var(--ink);
 }
 
 .depth.is-on {
-  background: var(--deep);
   color: var(--paper);
   font-weight: 700;
+}
+
+.depth-marker {
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  background: var(--deep);
+}
+
+.depth-value {
+  position: relative;
+}
+
+.mode-switch:focus-visible,
+.depth:focus-visible {
+  outline: 2px solid var(--deep);
+  outline-offset: -3px;
 }
 
 .trust {
@@ -863,5 +999,22 @@ a {
 
   .tile-identity h2 {
     font-size: 26px;
+  }
+
+  .toasts {
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
