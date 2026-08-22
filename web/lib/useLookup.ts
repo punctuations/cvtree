@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
-import { fetchReport, type PackageReport } from "./api";
+import { fetchReport } from "./api";
+import type { PackageReport } from "./model";
 import { cachePackage, getCachedPackage } from "./convexFunctions";
 import { cacheKey, parseQuery } from "./spec";
 
@@ -83,7 +84,10 @@ export function useCachedLookup(): Lookup {
   const [cacheReadExpired, setCacheReadExpired] = useState<number | null>(null);
 
   const parsed = request ? parseQuery(request.query) : null;
-  const key = parsed?.version ? cacheKey(parsed.ecosystem, parsed.name, parsed.version) : null;
+  const key =
+    parsed?.ok && parsed.query.version
+      ? cacheKey(parsed.query.ecosystem ?? "npm", parsed.query.name, parsed.query.version)
+      : null;
 
   const cached = useQuery(getCachedPackage, key ? { key } : "skip");
   const writeToCache = useMutation(cachePackage);

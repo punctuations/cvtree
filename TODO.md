@@ -71,8 +71,11 @@ not verified.
 
 ## Tests
 
-There are no JavaScript tests at all.
+There are no JavaScript tests at all, and the OSV client, CVSS scoring and normalization now live
+here as well as in Rust. The CVSS scoring is the piece most likely to drift silently.
 
+- [ ] Test `cvssV3BaseScore` against known vectors, mirroring the Rust cases
+- [ ] Test normalization against OSV fixtures: severity fallback, withdrawn, version lists, GIT ranges
 - [ ] Test the query parser in `lib/spec.ts`
 - [ ] Test the three route handlers, including the 400, 404 and 502 paths
 - [ ] Test the cache fallthrough in `useLookup.ts`: hit, miss, and the deadline path when Convex is
@@ -95,7 +98,17 @@ should audit a whole project is a product decision rather than just work.
 ## Shipping
 
 - [ ] Add a CI job running `tsc --noEmit`, `eslint` and `next build`
-- [ ] Host the Rust service and point `CVTREE_API_URL` at it
+- [ ] Deploy the site, which now needs nothing but network access to OSV
+
+## Two implementations
+
+The OSV client, the CVSS scoring and the normalization now exist in Rust and in TypeScript. They
+produce identical JSON today, checked by running `cvtree serve` next to `npm run dev` and diffing the
+two. Nothing enforces that automatically, so it will drift.
+
+- [ ] Decide whether the CLI keeps `cvtree serve`, or whether the CLI calls the site's API instead
+- [ ] If both stay, add a CI check that diffs the two implementations on a fixed set of packages
+- [ ] Keep the normalized models in step whenever either side changes
 
 # Order
 

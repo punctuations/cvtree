@@ -119,25 +119,18 @@ report so you can still see them.
 
 ## Web app
 
-The site has its own API, and that API is a thin proxy in front of the JSON service hosted by the
-CLI binary. The browser only ever calls same origin `/api/...`, and the vulnerability logic stays in
-one Rust implementation instead of being written a second time in TypeScript.
-
-```
-browser -> web/app/api/* (Next.js) -> cvtree serve (Rust) -> OSV
-```
-
-Run both:
+The site is self contained. Its route handlers query OSV directly and return the normalized models,
+so nothing else needs to be running:
 
 ```bash
-cargo run -- serve            # http://localhost:8080
 cd web && npm install && npm run dev   # http://localhost:3000
 ```
 
-`CVTREE_API_URL` tells the site where the Rust service is, and defaults to `http://localhost:8080`.
-It is read on the server, so the address never reaches the browser.
+```
+browser -> web/app/api/* -> OSV
+```
 
-Both layers expose the same routes and return the same normalized models:
+The routes:
 
 ```
 GET /api/search?q=lodash@4.17.15
@@ -148,8 +141,12 @@ GET /api/health
 ```
 
 Errors come back as `{"error": "..."}` with a useful status: 400 for a bad package or ecosystem, 404
-when a package has no published version to resolve, 502 when OSV or the Rust service cannot be
-reached.
+when a package has no published version to resolve, 502 when OSV cannot be reached.
+
+The CLI has its own `cvtree serve` exposing the same routes from the Rust implementation. The web app
+does not use it. It is worth keeping while both exist, because running the two side by side and
+diffing their output is how the TypeScript port is checked against the Rust one, and the two agree
+field for field today.
 
 See `web/README.md` for the Convex cache setup.
 

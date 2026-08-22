@@ -1,22 +1,35 @@
 import type { NextRequest } from "next/server";
 
-import { proxy } from "@/lib/upstream";
+import { CvtreeError, errorResponse } from "@/lib/errors";
+import { packageReport } from "@/lib/report";
+import { parseEcosystem, parseQuery, unknownEcosystem } from "@/lib/spec";
 
 export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get("q")?.trim();
+  try {
+    const input = request.nextUrl.searchParams.get("q")?.trim();
+    if (!input) {
+      return Response.json(
+        { error: "expected a package such as lodash@4.17.15 in the q parameter" },
+        { status: 400 },
+      );
+    }
 
-  if (!query) {
-    return Response.json(
-      { error: "expected a package such as lodash@4.17.15 in the q parameter" },
-      { status: 400 },
-    );
+    const parsed = parseQuery(input);
+    if (!parsed.ok) {
+      throw new CvtreeError(parsed.message, 400);
+    }
+
+    const requested = request.nextUrl.searchParams.get("ecosystem");
+    const override = requested ? parseEcosystem(requested) : null;
+    if (requested && !override) {
+      throw new CvtreeError(unknownEcosystem(requested), 400);
+    }
+
+    const { name, version, ecosystem } = parsed.query;
+    const report = await packageReport(name, version, ecosystem ?? override ?? "npm");
+
+    return Response.json(report);
+  } catch (error) {
+    return errorResponse(error);
   }
-
-  const forwarded = new URLSearchParams({ q: query });
-  const ecosystem = request.nextUrl.searchParams.get("ecosystem");
-  if (ecosystem) {
-    forwarded.set("ecosystem", ecosystem);
-  }
-
-  return proxy(`/api/search?${forwarded.toString()}`);
 }

@@ -5,7 +5,7 @@ import {
   type PackageReport,
   type Severity,
   type Vulnerability,
-} from "@/lib/api";
+} from "@/lib/model";
 
 const SEVERITY_ORDER: Record<string, number> = {
   CRITICAL: 0,
