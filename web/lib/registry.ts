@@ -3,13 +3,37 @@ import type { Ecosystem } from "./model";
 
 const NPM_BASE_URL = process.env.NPM_REGISTRY_URL ?? "https://registry.npmjs.org";
 const CRATES_BASE_URL = process.env.CRATES_REGISTRY_URL ?? "https://crates.io/api/v1";
+const PYPI_BASE_URL = process.env.PYPI_REGISTRY_URL ?? "https://pypi.org/pypi";
 const USER_AGENT = "cvtree-web/0.1.0";
 
+function registryUrl(name: string, ecosystem: Ecosystem): string {
+  switch (ecosystem) {
+    case "npm":
+      return `${NPM_BASE_URL}/${name}/latest`;
+    case "crates.io":
+      return `${CRATES_BASE_URL}/crates/${encodeURIComponent(name)}`;
+    case "PyPI":
+      return `${PYPI_BASE_URL}/${encodeURIComponent(name)}/json`;
+  }
+}
+
+function extractVersion(body: unknown, ecosystem: Ecosystem): unknown {
+  switch (ecosystem) {
+    case "npm":
+      return (body as { version?: unknown })?.version;
+    case "crates.io":
+      return (
+        (body as { crate?: { max_stable_version?: unknown; max_version?: unknown } })?.crate
+          ?.max_stable_version ??
+        (body as { crate?: { max_version?: unknown } })?.crate?.max_version
+      );
+    case "PyPI":
+      return (body as { info?: { version?: unknown } })?.info?.version;
+  }
+}
+
 export async function latestVersion(name: string, ecosystem: Ecosystem): Promise<string> {
-  const url =
-    ecosystem === "npm"
-      ? `${NPM_BASE_URL}/${name}/latest`
-      : `${CRATES_BASE_URL}/crates/${encodeURIComponent(name)}`;
+  const url = registryUrl(name, ecosystem);
 
   const fail = (detail: string) =>
     new CvtreeError(
@@ -35,10 +59,7 @@ export async function latestVersion(name: string, ecosystem: Ecosystem): Promise
   }
 
   const body = await response.json().catch(() => null);
-  const version =
-    ecosystem === "npm"
-      ? body?.version
-      : (body?.crate?.max_stable_version ?? body?.crate?.max_version);
+  const version = extractVersion(body, ecosystem);
 
   if (typeof version !== "string") {
     throw fail("the registry did not report a version");

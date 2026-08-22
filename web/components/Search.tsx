@@ -7,8 +7,16 @@ import { useCachedLookup, useDirectLookup, type Lookup } from "@/lib/useLookup";
 import { cacheEnabled } from "./ConvexClientProvider";
 import { Report } from "./Report";
 
+const EXAMPLES = [
+  "lodash@4.17.15",
+  "npm:express@4.17.1",
+  "cargo:time@0.1.44",
+  "pip:pyyaml@5.3.1",
+];
+
 export function Search({ wordmark }: { wordmark: ReactNode }) {
   return cacheEnabled ? <CachedSearch wordmark={wordmark} /> : <DirectSearch wordmark={wordmark} />;
+
 }
 
 function CachedSearch({ wordmark }: { wordmark: ReactNode }) {

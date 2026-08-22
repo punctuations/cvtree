@@ -31,6 +31,11 @@ the feature the project is named after.
 
 ## Ecosystem coverage
 
+The web track now handles PyPI as well as npm and crates.io. The CLI does not, so `pip:` works on
+the site and fails on the command line.
+
+- [ ] Add PyPI to the Rust `Ecosystem` enum and registry client, matching the web track
+- [ ] Parse `requirements.txt` and `poetry.lock`
 - [ ] Parse `yarn.lock`
 - [ ] Parse `pnpm-lock.yaml`
 - [ ] Keep the `devDependencies` distinction from `package-lock.json` on the node
@@ -90,7 +95,7 @@ should audit a whole project is a product decision rather than just work.
 
 ## Interface
 
-- [ ] Add an ecosystem selector, since today it is only the `npm:` and `cargo:` prefix syntax
+- [ ] Add an ecosystem selector, since today it is only the `npm:`, `cargo:` and `pip:` prefix syntax
 - [ ] Put search state in the URL so a result can be shared and reloaded
 - [ ] Add a light theme
 
@@ -128,5 +133,6 @@ formats.
 On the web track, confirm the cache path in the browser, then validate the cache writes, then decide
 whether the site grows an audit view before spending time on interface polish.
 
-The two tracks meet in two places: deployment, since the site needs the Rust service reachable, and
-any change to the normalized models, which the CLI owns and the site consumes.
+The two tracks meet in one place now: any change to the normalized models, which both sides
+implement separately. Adding an ecosystem to one and not the other is exactly the drift the "two
+implementations" section warns about.

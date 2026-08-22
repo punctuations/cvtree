@@ -41,7 +41,7 @@ enum Command {
         #[arg(long, help = "Print the result as JSON")]
         json: bool,
 
-        #[arg(short, long, value_name = "ECOSYSTEM", help = "npm or crates.io")]
+        #[arg(short, long, value_name = "ECOSYSTEM", help = "npm, crates.io or PyPI")]
         ecosystem: Option<Ecosystem>,
     },
 
