@@ -1,4 +1,4 @@
-export type Ecosystem = "npm" | "crates.io";
+export type Ecosystem = "npm" | "crates.io" | "PyPI";
 
 export type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 

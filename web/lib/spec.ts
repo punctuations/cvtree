@@ -18,6 +18,9 @@ const ECOSYSTEM_ALIASES: Record<string, Ecosystem> = {
   crates: "crates.io",
   "crates.io": "crates.io",
   rust: "crates.io",
+  pip: "PyPI",
+  pypi: "PyPI",
+  python: "PyPI",
 };
 
 export function parseEcosystem(value: string): Ecosystem | null {
@@ -25,7 +28,7 @@ export function parseEcosystem(value: string): Ecosystem | null {
 }
 
 export function unknownEcosystem(value: string): string {
-  return `unknown ecosystem '${value}' (supported: npm, crates.io)`;
+  return `unknown ecosystem '${value}' (supported: npm, crates.io, PyPI)`;
 }
 
 export function parseQuery(input: string): ParseResult {
