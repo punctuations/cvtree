@@ -109,14 +109,11 @@ fn orders_results_by_severity() {
     let package = Dependency::new("demo-pkg", "1.1.0", Ecosystem::Npm);
     let vulnerabilities = normalize_all(&query("query-edge-cases.json").vulns, &package);
 
-    let severities: Vec<Option<Severity>> = vulnerabilities.iter().map(|item| item.severity).collect();
+    let severities: Vec<Option<Severity>> =
+        vulnerabilities.iter().map(|item| item.severity).collect();
     assert_eq!(
         severities,
-        vec![
-            Some(Severity::Critical),
-            Some(Severity::Medium),
-            None
-        ]
+        vec![Some(Severity::Critical), Some(Severity::Medium), None]
     );
 }
 
@@ -132,7 +129,10 @@ fn normalizes_a_rustsec_advisory() {
     assert_eq!(advisory.cvss_score, Some(6.2));
     assert_eq!(advisory.package.ecosystem, Ecosystem::CratesIo);
     assert!(advisory.fixed_versions.contains(&"0.2.23".to_string()));
-    assert!(advisory.summary.as_deref().is_some_and(|s| s.contains("segfault")));
+    assert!(advisory
+        .summary
+        .as_deref()
+        .is_some_and(|s| s.contains("segfault")));
 }
 
 #[test]

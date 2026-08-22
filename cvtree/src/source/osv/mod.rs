@@ -1,8 +1,6 @@
 mod schema;
 
-pub use schema::{
-    normalize, normalize_all, OsvBatchResponse, OsvQueryResponse, OsvVulnerability,
-};
+pub use schema::{normalize, normalize_all, OsvBatchResponse, OsvQueryResponse, OsvVulnerability};
 
 use std::collections::{HashMap, HashSet};
 
@@ -71,8 +69,9 @@ impl OsvClient {
 
         for chunk in dependencies.chunks(BATCH_SIZE) {
             let queries: Vec<serde_json::Value> = chunk.iter().map(query_body).collect();
-            let response: OsvBatchResponse =
-                self.post("/v1/querybatch", json!({ "queries": queries })).await?;
+            let response: OsvBatchResponse = self
+                .post("/v1/querybatch", json!({ "queries": queries }))
+                .await?;
 
             for index in 0..chunk.len() {
                 let found = response
@@ -87,7 +86,10 @@ impl OsvClient {
         Ok(ids)
     }
 
-    async fn details_for(&self, ids: &HashSet<String>) -> Result<HashMap<String, OsvVulnerability>> {
+    async fn details_for(
+        &self,
+        ids: &HashSet<String>,
+    ) -> Result<HashMap<String, OsvVulnerability>> {
         let fetched: Vec<Result<OsvVulnerability>> = stream::iter(ids.iter().cloned())
             .map(|id| async move { self.vulnerability(&id).await })
             .buffer_unordered(DETAIL_CONCURRENCY)
@@ -171,7 +173,12 @@ async fn decode<T: serde::de::DeserializeOwned>(response: reqwest::Response) -> 
     if !status.is_success() {
         let detail = serde_json::from_str::<serde_json::Value>(&body)
             .ok()
-            .and_then(|value| value.get("message").and_then(|m| m.as_str()).map(str::to_string))
+            .and_then(|value| {
+                value
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .map(str::to_string)
+            })
             .unwrap_or_else(|| body.chars().take(200).collect());
         return Err(Error::source(
             "OSV",

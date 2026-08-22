@@ -1,5 +1,4 @@
 mod render;
-mod serve;
 mod style;
 
 use std::path::{Path, PathBuf};
@@ -33,7 +32,10 @@ struct Cli {
 enum Command {
     #[command(about = "Look up vulnerabilities for a single package version")]
     Search {
-        #[arg(value_name = "PACKAGE", help = "lodash, lodash@4.17.15 or npm:lodash@4.17.15")]
+        #[arg(
+            value_name = "PACKAGE",
+            help = "lodash, lodash@4.17.15 or npm:lodash@4.17.15"
+        )]
         package: String,
 
         #[arg(long, help = "Print the result as JSON")]
@@ -61,22 +63,16 @@ enum Command {
         #[arg(long, help = "Show how each vulnerable package entered the project")]
         tree: bool,
     },
-
-    #[command(about = "Run the JSON API used by the cvtree web app")]
-    Serve {
-        #[arg(long, default_value = "127.0.0.1")]
-        host: String,
-
-        #[arg(long, default_value_t = 8080)]
-        port: u16,
-    },
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     style::init(cli.no_color);
 
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(err) => {
             eprintln!("{}", render::error(&err.to_string()));
@@ -106,10 +102,6 @@ async fn run(command: Command) -> anyhow::Result<u8> {
             fail_on,
             tree,
         } => audit(&path, json, fail_on, tree).await,
-        Command::Serve { host, port } => {
-            serve::run(&host, port).await?;
-            Ok(EXIT_OK)
-        }
     }
 }
 

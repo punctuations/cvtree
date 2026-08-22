@@ -20,7 +20,7 @@ parent/child edges), and the audit reports the path that introduced each vulnera
 
 ```
 cvtree/   core library: lockfile parsing, the OSV client, normalized models, audit orchestration
-cli/      the cvtree binary, including `cvtree serve` which hosts the JSON API
+cli/      the cvtree binary
 web/      the Next.js web app, with Convex caching OSV results
 ```
 
@@ -143,10 +143,10 @@ GET /api/health
 Errors come back as `{"error": "..."}` with a useful status: 400 for a bad package or ecosystem, 404
 when a package has no published version to resolve, 502 when OSV cannot be reached.
 
-The CLI has its own `cvtree serve` exposing the same routes from the Rust implementation. The web app
-does not use it. It is worth keeping while both exist, because running the two side by side and
-diffing their output is how the TypeScript port is checked against the Rust one, and the two agree
-field for field today.
+The OSV client, the CVSS scoring and the normalization exist twice, once in Rust and once in
+TypeScript, and they produce identical JSON. `cvtree search <package> --json` and
+`GET /api/search?q=<package>` return the same document, which is how the port is checked against the
+original.
 
 See `web/README.md` for the Convex cache setup.
 

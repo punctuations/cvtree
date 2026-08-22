@@ -1,8 +1,8 @@
 # TODO
 
 Work left on the cvtree MVP, split by the two surfaces. The CLI track is Rust in `cvtree/` and
-`cli/`. The web track is `web/`. The web app calls the Rust code through `cvtree serve`, so anything
-fixed in the core crate lands on both surfaces at once.
+`cli/`. The web track is `web/`. The two are independent: the site queries OSV itself and does not
+run any Rust, so a fix in one does not land in the other.
 
 # CLI
 
@@ -49,7 +49,6 @@ link for a different one, which happens today on lodash.
 
 - [ ] Add a CI job running `cargo test`, `cargo clippy` and `cargo fmt --check`
 - [ ] Publish an install path, either `cargo install` or release binaries
-- [ ] Package the binary so the web app has something to run against in production
 
 # Web
 
@@ -95,6 +94,16 @@ should audit a whole project is a product decision rather than just work.
 - [ ] Put search state in the URL so a result can be shared and reloaded
 - [ ] Add a light theme
 
+## Reliability
+
+The port did not carry over everything the Rust client does. These are gaps against the original,
+not new ideas.
+
+- [ ] Add a timeout to the OSV and registry requests, since `fetch` has no default and the Rust
+      client uses 30 seconds
+- [ ] Make `/api/health` verify OSV is reachable, or rename it so it reads as a liveness check only
+- [ ] Decide what protects OSV from repeated uncached searches, given the cache is optional
+
 ## Shipping
 
 - [ ] Add a CI job running `tsc --noEmit`, `eslint` and `next build`
@@ -102,13 +111,13 @@ should audit a whole project is a product decision rather than just work.
 
 ## Two implementations
 
-The OSV client, the CVSS scoring and the normalization now exist in Rust and in TypeScript. They
-produce identical JSON today, checked by running `cvtree serve` next to `npm run dev` and diffing the
-two. Nothing enforces that automatically, so it will drift.
+The OSV client, the CVSS scoring and the normalization exist in Rust and in TypeScript. They produce
+identical JSON today: `cvtree search <package> --json` and `GET /api/search?q=<package>` return the
+same document. Nothing enforces that, so it will drift.
 
-- [ ] Decide whether the CLI keeps `cvtree serve`, or whether the CLI calls the site's API instead
-- [ ] If both stay, add a CI check that diffs the two implementations on a fixed set of packages
+- [ ] Add a CI check that diffs `cvtree search --json` against `/api/search` on a fixed package set
 - [ ] Keep the normalized models in step whenever either side changes
+- [ ] Revisit whether both implementations should exist at all once the CLI settles
 
 # Order
 

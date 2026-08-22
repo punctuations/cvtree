@@ -32,7 +32,10 @@ fn names(tree: &DependencyTree) -> Vec<String> {
 
 fn path_to(tree: &DependencyTree, dependency: &Dependency) -> Vec<String> {
     let id = tree.find(dependency).expect("dependency in tree");
-    tree.path_to(id).into_iter().map(Dependency::to_string).collect()
+    tree.path_to(id)
+        .into_iter()
+        .map(Dependency::to_string)
+        .collect()
 }
 
 #[test]
@@ -121,7 +124,12 @@ fn parses_cargo_lockfile() {
     assert_eq!(tree.ecosystem, Ecosystem::CratesIo);
     assert_eq!(
         names(&tree),
-        vec!["chrono@0.4.19", "libc@0.2.147", "smallvec@1.6.0", "time@0.1.44"]
+        vec![
+            "chrono@0.4.19",
+            "libc@0.2.147",
+            "smallvec@1.6.0",
+            "time@0.1.44"
+        ]
     );
 }
 
@@ -139,7 +147,10 @@ fn cargo_excludes_the_local_crate_and_keeps_edges() {
     assert_eq!(direct, vec!["chrono@0.4.19", "smallvec@1.6.0"]);
 
     assert_eq!(
-        path_to(&tree, &Dependency::new("libc", "0.2.147", Ecosystem::CratesIo)),
+        path_to(
+            &tree,
+            &Dependency::new("libc", "0.2.147", Ecosystem::CratesIo)
+        ),
         vec!["chrono@0.4.19", "time@0.1.44", "libc@0.2.147"]
     );
 }
@@ -201,7 +212,9 @@ fn discovery_reports_missing_lockfiles() {
 fn reports_broken_lockfiles_with_the_path() {
     let (_dir, root) = project(&[("package-lock.json", "{ not json")]);
 
-    let error = parser::npm::NpmParser.parse(&root).expect_err("invalid json");
+    let error = parser::npm::NpmParser
+        .parse(&root)
+        .expect_err("invalid json");
     let message = error.to_string();
     assert!(message.contains("package-lock.json"), "{message}");
 }

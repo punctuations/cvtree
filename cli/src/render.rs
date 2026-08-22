@@ -55,7 +55,10 @@ pub fn search(package: &Dependency, vulnerabilities: &[Vulnerability]) -> String
         }
     }
 
-    out.push_str(&format!("\n{RULE}\n\n{}\n", count_line(vulnerabilities.len())));
+    out.push_str(&format!(
+        "\n{RULE}\n\n{}\n",
+        count_line(vulnerabilities.len())
+    ));
     out
 }
 
@@ -128,7 +131,10 @@ pub fn audit(report: &AuditReport) -> String {
         }
     }
 
-    out.push_str(&format!("\n{RULE}\n\n{}\n", count_line(report.vulnerabilities.len())));
+    out.push_str(&format!(
+        "\n{RULE}\n\n{}\n",
+        count_line(report.vulnerabilities.len())
+    ));
     out
 }
 
@@ -138,7 +144,10 @@ fn finding_block(finding: &Finding) -> String {
         "  {}\n",
         style::bold(&format!("{}@{}", finding.package, finding.version))
     ));
-    out.push_str(&format!("  {}\n", style::dim(&finding_identifiers(finding))));
+    out.push_str(&format!(
+        "  {}\n",
+        style::dim(&finding_identifiers(finding))
+    ));
 
     if let Some(summary) = &finding.summary {
         out.push_str(&format!("\n  {summary}\n"));
@@ -187,7 +196,11 @@ pub fn tree(report: &AuditReport) -> String {
         let depth = finding.path.len().saturating_sub(1);
         for (index, entry) in finding.path.iter().skip(1).enumerate() {
             let indent = "  ".repeat(index + 1);
-            let branch = if index + 1 == depth { "└── " } else { "├── " };
+            let branch = if index + 1 == depth {
+                "└── "
+            } else {
+                "├── "
+            };
             out.push_str(&format!("{indent}{branch}{entry}\n"));
         }
         let indent = "  ".repeat(depth + 1);
@@ -196,7 +209,11 @@ pub fn tree(report: &AuditReport) -> String {
             style::severity(finding.severity, "!"),
             style::severity(
                 finding.severity,
-                &format!("{} {}", style::severity_label(finding.severity), finding.identifier())
+                &format!(
+                    "{} {}",
+                    style::severity_label(finding.severity),
+                    finding.identifier()
+                )
             )
         ));
     }

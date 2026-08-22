@@ -107,7 +107,11 @@ fn build_modern(tree: &mut DependencyTree, packages: &HashMap<String, LockedPack
         let Some(&parent) = ids.get(path.as_str()) else {
             continue;
         };
-        for name in package.dependencies.keys().chain(package.optional_dependencies.keys()) {
+        for name in package
+            .dependencies
+            .keys()
+            .chain(package.optional_dependencies.keys())
+        {
             if let Some(child) = resolve(path, name, &ids) {
                 tree.link(parent, child);
             }
@@ -135,10 +139,10 @@ fn resolve(from: &str, name: &str, ids: &HashMap<&str, NodeId>) -> Option<NodeId
 }
 
 fn package_name(path: &str, package: &LockedPackage) -> Option<String> {
-    package
-        .name
-        .clone()
-        .or_else(|| path.rsplit_once("node_modules/").map(|(_, name)| name.to_string()))
+    package.name.clone().or_else(|| {
+        path.rsplit_once("node_modules/")
+            .map(|(_, name)| name.to_string())
+    })
 }
 
 fn path_depth(path: &str) -> usize {
@@ -168,7 +172,8 @@ fn add_legacy(
     let mut children: Vec<&String> = package.dependencies.keys().collect();
     children.sort();
     for child_name in children {
-        if let Some(child) = add_legacy(tree, child_name, &package.dependencies[child_name], false) {
+        if let Some(child) = add_legacy(tree, child_name, &package.dependencies[child_name], false)
+        {
             tree.link(id, child);
         }
     }

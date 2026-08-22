@@ -62,7 +62,10 @@ mod tests {
 
     #[test]
     fn parses_bare_name() {
-        assert_eq!(PackageSpec::parse("lodash").unwrap(), spec("lodash", None, None));
+        assert_eq!(
+            PackageSpec::parse("lodash").unwrap(),
+            spec("lodash", None, None)
+        );
     }
 
     #[test]

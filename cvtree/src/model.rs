@@ -306,7 +306,10 @@ impl DependencyTree {
                     cursor = parent;
                 }
                 path.reverse();
-                return path.into_iter().map(|id| &self.nodes[id].dependency).collect();
+                return path
+                    .into_iter()
+                    .map(|id| &self.nodes[id].dependency)
+                    .collect();
             }
             for &child in &self.nodes[current].children {
                 if seen.insert(child) {

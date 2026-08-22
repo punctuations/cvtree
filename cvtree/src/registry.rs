@@ -69,9 +69,10 @@ impl RegistryClient {
 fn version_from(body: &serde_json::Value, ecosystem: Ecosystem) -> Option<String> {
     let value = match ecosystem {
         Ecosystem::Npm => body.get("version"),
-        Ecosystem::CratesIo => body
-            .get("crate")
-            .and_then(|item| item.get("max_stable_version").or_else(|| item.get("max_version"))),
+        Ecosystem::CratesIo => body.get("crate").and_then(|item| {
+            item.get("max_stable_version")
+                .or_else(|| item.get("max_version"))
+        }),
     };
     value?.as_str().map(str::to_string)
 }

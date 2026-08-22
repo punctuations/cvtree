@@ -124,9 +124,11 @@ impl AuditReport {
     }
 
     pub fn fails(&self, threshold: Severity) -> bool {
-        self.vulnerabilities
-            .iter()
-            .any(|finding| finding.severity.is_some_and(|severity| severity >= threshold))
+        self.vulnerabilities.iter().any(|finding| {
+            finding
+                .severity
+                .is_some_and(|severity| severity >= threshold)
+        })
     }
 
     pub fn findings_by_severity(&self, severity: Option<Severity>) -> Vec<&Finding> {
@@ -210,7 +212,10 @@ impl PackageReport {
             version: package.version.clone(),
             ecosystem: package.ecosystem,
             vulnerability_count: vulnerabilities.len(),
-            max_severity: vulnerabilities.iter().filter_map(|item| item.severity).max(),
+            max_severity: vulnerabilities
+                .iter()
+                .filter_map(|item| item.severity)
+                .max(),
             vulnerabilities,
         }
     }

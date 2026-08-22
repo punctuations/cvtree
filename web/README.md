@@ -31,7 +31,8 @@ Without a version, the latest published version is resolved from registry.npmjs.
 returned in the response.
 
 This code is a port of the Rust implementation in `cvtree/src/source/osv/`, and the two produce
-identical JSON. Run `cvtree serve` alongside `npm run dev` and diff the two if you change either.
+identical JSON. `cvtree search lodash@4.17.15 --json` and `/api/search?q=lodash@4.17.15` return the
+same document, so diff them if you change either side.
 
 ## Configuration
 

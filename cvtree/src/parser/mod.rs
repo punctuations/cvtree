@@ -19,10 +19,7 @@ pub trait DependencyParser: Send + Sync {
 }
 
 pub fn all() -> Vec<Box<dyn DependencyParser>> {
-    vec![
-        Box::new(npm::NpmParser),
-        Box::new(cargo::CargoParser),
-    ]
+    vec![Box::new(npm::NpmParser), Box::new(cargo::CargoParser)]
 }
 
 pub fn supported_lockfiles() -> Vec<&'static str> {

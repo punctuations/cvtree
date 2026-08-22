@@ -145,13 +145,16 @@ pub fn normalize(raw: &OsvVulnerability, package: &Dependency) -> Vulnerability 
         }
     }
 
-    let vectors = raw
-        .severity
-        .iter()
-        .chain(affected_entries.iter().flat_map(|entry| entry.severity.iter()));
+    let vectors = raw.severity.iter().chain(
+        affected_entries
+            .iter()
+            .flat_map(|entry| entry.severity.iter()),
+    );
     let cvss = vectors
         .filter(|item| item.kind == "CVSS_V3")
-        .find_map(|item| severity::cvss_v3_base_score(&item.score).map(|score| (item.score.clone(), score)));
+        .find_map(|item| {
+            severity::cvss_v3_base_score(&item.score).map(|score| (item.score.clone(), score))
+        });
 
     let (cvss_vector, cvss_score) = match cvss {
         Some((vector, score)) => (Some(vector), Some(score)),
