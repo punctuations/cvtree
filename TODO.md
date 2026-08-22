@@ -144,7 +144,8 @@ not new ideas.
 
 ## Shipping
 
-- [ ] Add a CI job running `tsc --noEmit`, `eslint` and `next build`
+- [ ] Add a CI job running `npm test`, `tsc --noEmit`, `eslint` and `next build`. Nothing is
+      prerendered against the network any more, so the build needs no OSV access.
 - [ ] Deploy the site, which now needs nothing but network access to OSV
 
 ## Two implementations
