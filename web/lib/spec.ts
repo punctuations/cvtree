@@ -65,6 +65,17 @@ export function parseQuery(input: string): ParseResult {
   return { ok: true, query: { ecosystem, name, version } };
 }
 
+export const CACHE_SCHEMA_VERSION = 2;
+
 export function cacheKey(ecosystem: string, name: string, version: string): string {
-  return `${ecosystem}/${name}/${version}`;
+  return `v${CACHE_SCHEMA_VERSION}:${ecosystem}/${name}/${version}`;
+}
+
+export function deepCacheKey(
+  ecosystem: string,
+  name: string,
+  version: string,
+  depth: number,
+): string {
+  return `v${CACHE_SCHEMA_VERSION}:deep:${ecosystem}/${name}/${version}:d${depth}`;
 }

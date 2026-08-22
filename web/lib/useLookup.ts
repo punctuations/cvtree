@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 
 import { fetchReport } from "./api";
 import type { PackageReport } from "./model";
-import { cachePackage, getCachedPackage } from "./convexFunctions";
+import { getCachedPackage } from "./convexFunctions";
 import { cacheKey, parseQuery } from "./spec";
 
 const CACHE_READ_TIMEOUT_MS = 2500;
@@ -90,7 +90,6 @@ export function useCachedLookup(): Lookup {
       : null;
 
   const cached = useQuery(getCachedPackage, key ? { key } : "skip");
-  const writeToCache = useMutation(cachePackage);
 
   useEffect(() => {
     if (!request || !key) {
@@ -117,14 +116,6 @@ export function useCachedLookup(): Lookup {
           return;
         }
         setFetched({ id: request.id, state: { status: "ready", report, cached: false } });
-        void writeToCache({
-          key: cacheKey(report.ecosystem, report.package, report.version),
-          ecosystem: report.ecosystem,
-          name: report.package,
-          version: report.version,
-          vulnerabilityCount: report.vulnerability_count,
-          report,
-        }).catch(() => undefined);
       })
       .catch((error: Error) => {
         if (!cancelled) {
@@ -135,7 +126,7 @@ export function useCachedLookup(): Lookup {
     return () => {
       cancelled = true;
     };
-  }, [request, key, cached, cacheReadExpired, writeToCache]);
+  }, [request, key, cached, cacheReadExpired]);
 
   if (!request) {
     return { state: { status: "idle" }, search };

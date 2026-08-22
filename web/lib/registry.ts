@@ -5,6 +5,7 @@ const NPM_BASE_URL = process.env.NPM_REGISTRY_URL ?? "https://registry.npmjs.org
 const CRATES_BASE_URL = process.env.CRATES_REGISTRY_URL ?? "https://crates.io/api/v1";
 const PYPI_BASE_URL = process.env.PYPI_REGISTRY_URL ?? "https://pypi.org/pypi";
 const USER_AGENT = "cvtree-web/0.1.0";
+const REQUEST_TIMEOUT_MS = 15000;
 
 function registryUrl(name: string, ecosystem: Ecosystem): string {
   switch (ecosystem) {
@@ -46,6 +47,7 @@ export async function latestVersion(name: string, ecosystem: Ecosystem): Promise
     response = await fetch(url, {
       headers: { accept: "application/json", "user-agent": USER_AGENT },
       cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch {
     throw fail("network request failed");

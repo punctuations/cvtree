@@ -1,8 +1,10 @@
 import type { NextRequest } from "next/server";
 
+import { cacheHeaders, cachedPackageReport } from "@/lib/cache";
 import { CvtreeError, errorResponse } from "@/lib/errors";
+import { latestVersion } from "@/lib/registry";
 import { packageReport } from "@/lib/report";
-import { parseEcosystem, unknownEcosystem } from "@/lib/spec";
+import { cacheKey, parseEcosystem, unknownEcosystem } from "@/lib/spec";
 
 export async function GET(
   _request: NextRequest,
@@ -23,8 +25,13 @@ export async function GET(
 
     const name = segments.length > 1 ? segments.slice(0, -1).join("/") : segments[0];
     const version = segments.length > 1 ? segments[segments.length - 1] : null;
+    const resolved = version ?? (await latestVersion(name, ecosystem));
 
-    return Response.json(await packageReport(name, version, ecosystem));
+    const cached = await cachedPackageReport(cacheKey(ecosystem, name, resolved), () =>
+      packageReport(name, resolved, ecosystem),
+    );
+
+    return Response.json(cached.report, { headers: cacheHeaders(cached) });
   } catch (error) {
     return errorResponse(error);
   }

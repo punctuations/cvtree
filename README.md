@@ -14,7 +14,8 @@ Two interfaces share one Rust implementation:
 Working today: npm and crates.io, package search, lockfile auditing, human and JSON output,
 severity based exit codes, and the web app. The dependency tree is parsed and stored (including
 parent/child edges), and the audit reports the path that introduced each vulnerable package, but
-`--tree` rendering is still rough.
+`--tree` rendering is still rough. The web app also handles PyPI, and audits a package's transitive
+dependencies through `/api/deepsearch`.
 
 ## Layout
 
@@ -137,11 +138,33 @@ GET /api/search?q=lodash@4.17.15
 GET /api/package/npm/lodash/4.17.15
 GET /api/package/crates.io/time/0.1.44
 GET /api/package/npm/@babel/core/7.0.0
+GET /api/deepsearch?q=express@4.17.1&depth=2
 GET /api/health
 ```
 
 Errors come back as `{"error": "..."}` with a useful status: 400 for a bad package or ecosystem, 404
 when a package has no published version to resolve, 502 when OSV cannot be reached.
+
+`/api/deepsearch` goes past the one version you asked about. It resolves the package's dependencies
+from the registry, then their dependencies, down to `depth` levels (default 2, maximum 6), and audits
+every package it finds. The response is the same report `cvtree audit --json` produces, so each
+finding carries the `path` it came in through:
+
+```json
+{
+  "package": "lodash.template",
+  "version": "3.6.2",
+  "id": "GHSA-35jh-r3h4-6jhm",
+  "severity": "HIGH",
+  "path": ["gulp@3.9.1", "gulp-util@3.0.8", "lodash.template@3.6.2"]
+}
+```
+
+There is no lockfile involved, so ranges are resolved the way a fresh install would resolve them.
+`web/README.md` says what each ecosystem contributes and what is skipped.
+
+Deep search is web only. On the command line `cvtree audit` already walks the whole tree, because a
+lockfile already lists the transitive dependencies.
 
 The OSV client, the CVSS scoring and the normalization exist twice, once in Rust and once in
 TypeScript, and they produce identical JSON. `cvtree search <package> --json` and
