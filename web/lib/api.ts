@@ -35,8 +35,7 @@ export interface PackageReport {
   vulnerabilities: Vulnerability[];
 }
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_CVTREE_API ?? "http://localhost:8080";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_CVTREE_API ?? "";
 
 export async function fetchReport(query: string): Promise<PackageReport> {
   const url = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
@@ -46,7 +45,9 @@ export async function fetchReport(query: string): Promise<PackageReport> {
     response = await fetch(url);
   } catch {
     throw new Error(
-      `Could not reach the cvtree API at ${API_BASE_URL}. Start it with "cvtree serve".`,
+      API_BASE_URL
+        ? `Could not reach the cvtree API at ${API_BASE_URL}.`
+        : "Could not reach the cvtree API.",
     );
   }
 

@@ -19,6 +19,23 @@ npm run dev
 
 Open http://localhost:3000 and search for `lodash@4.17.15`.
 
+## API
+
+The routes under `app/api/` proxy the Rust service and pass its JSON through untouched, so the
+normalized models are defined in one place.
+
+```
+GET /api/search?q=lodash@4.17.15
+GET /api/package/npm/lodash/4.17.15
+GET /api/package/crates.io/time/0.1.44
+GET /api/health
+```
+
+`/api/package` is a catch all, so scoped npm names work: `/api/package/npm/@babel/core/7.0.0`.
+
+`/api/health` reports whether the Rust service is reachable, which is the quickest way to tell a
+site problem from a backend problem.
+
 ## Configuration
 
 ```bash
