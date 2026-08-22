@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { DotGothic16 } from "next/font/google";
+import localFont from "next/font/local";
 
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 import "./globals.css";
 
-const mono = JetBrains_Mono({
-  variable: "--font-mono",
+const display = localFont({
+  src: "./Retrogression/Retrogression-Regular.ttf",
+  variable: "--font-display",
+  display: "swap",
+});
+
+const body = DotGothic16({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -17,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={mono.variable}>
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>
         <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
