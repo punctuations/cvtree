@@ -128,7 +128,7 @@ export function useCachedLookup(): Lookup {
 
   if (cached) {
     return {
-      state: { status: "ready", report: cached.report, cached: true },
+      state: { status: "ready", report: cached.report as PackageReport, cached: true },
       search,
     };
   }

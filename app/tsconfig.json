@@ -37,7 +37,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "convex"
+    "node_modules"
   ]
 }
