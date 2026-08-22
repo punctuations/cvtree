@@ -1,3 +1,5 @@
+import { CACHE_SCHEMA_VERSION } from "@/convex/cache";
+
 import type { Ecosystem } from "./model";
 
 export interface PackageQuery {
@@ -65,7 +67,7 @@ export function parseQuery(input: string): ParseResult {
   return { ok: true, query: { ecosystem, name, version } };
 }
 
-export const CACHE_SCHEMA_VERSION = 2;
+export { CACHE_SCHEMA_VERSION };
 
 export function cacheKey(ecosystem: string, name: string, version: string): string {
   return `v${CACHE_SCHEMA_VERSION}:${ecosystem}/${name}/${version}`;

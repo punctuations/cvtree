@@ -63,12 +63,25 @@ link for a different one, which happens today on lodash.
 it. Ranges are resolved by `lib/semver.ts` and `lib/pep440.ts` rather than read from a lockfile, so
 the answer is what a fresh install would get.
 
-- [ ] Give it a web view, since today it is reachable only over the API
+- [x] Give it a web view
 - [ ] Decide whether the CLI grows the same thing for a package with no lockfile
+- [ ] Put the deep search mode and depth in the URL, so a result can be shared
 - [ ] Include npm `optionalDependencies`, or say why not
 - [ ] Skip Cargo dependencies whose `target` cannot apply, instead of auditing all of them
 - [ ] Evaluate PEP 508 markers rather than only dropping the ones naming an extra
 - [ ] Report progress for a deep walk, which can take a while on a wide tree
+
+## Trust
+
+Every package in a deep search gets a score out of 4 from advisories per published version, drawn as
+four twelve-stage boxes. The formula is in `lib/trust.ts` and the reasoning is in `web/README.md`.
+
+- [ ] Decide whether the deep report caches trust separately, since advisory totals move faster than
+      a package's dependency tree does
+- [ ] Weight an advisory by severity, or decide the count alone is the honest signal
+- [ ] Consider package age, since a package with 200 versions in a month is not the same as one with
+      200 over ten years
+- [ ] Show trust on the single package view, not only in deep search
 
 ## Convex
 
@@ -96,6 +109,7 @@ range resolvers and nothing else. The CVSS scoring is still the piece most likel
 
 - [x] Test the npm and Cargo range resolution in `lib/semver.ts`
 - [x] Test the PEP 440 version and specifier handling in `lib/pep440.ts`
+- [x] Test the trust scoring and the box stages in `lib/trust.ts`
 - [ ] Test `cvssV3BaseScore` against known vectors, mirroring the Rust cases
 - [ ] Test normalization against OSV fixtures: severity fallback, withdrawn, version lists, GIT ranges
 - [ ] Test the query parser in `lib/spec.ts`

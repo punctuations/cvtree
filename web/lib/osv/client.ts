@@ -54,6 +54,27 @@ export async function queryOsvBatch(dependencies: Dependency[]): Promise<Vulnera
   });
 }
 
+export async function countOsvBatch(
+  packages: { name: string; ecosystem: string }[],
+): Promise<number[]> {
+  const counts: number[] = [];
+
+  for (let start = 0; start < packages.length; start += BATCH_SIZE) {
+    const chunk = packages.slice(start, start + BATCH_SIZE);
+    const queries = chunk.map((entry) => ({
+      package: { name: entry.name, ecosystem: entry.ecosystem },
+    }));
+
+    const response = await post<OsvBatchResponse>("/v1/querybatch", { queries });
+
+    for (let index = 0; index < chunk.length; index += 1) {
+      counts.push((response.results?.[index]?.vulns ?? []).length);
+    }
+  }
+
+  return counts;
+}
+
 async function idsFor(dependencies: Dependency[]): Promise<string[][]> {
   const ids: string[][] = [];
 

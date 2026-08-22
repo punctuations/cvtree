@@ -86,6 +86,18 @@ export const severityCounts = v.object({
   unknown: v.number(),
 });
 
+export const packageTrust = v.object({
+  name: v.string(),
+  version: v.string(),
+  ecosystem,
+  depth: v.number(),
+  path: v.array(v.string()),
+  advisories: v.number(),
+  versions: v.number(),
+  vulnerability_count: v.number(),
+  trust: v.union(v.number(), v.null()),
+});
+
 export const deepReport = v.object({
   package: v.string(),
   version: v.string(),
@@ -96,7 +108,10 @@ export const deepReport = v.object({
   vulnerable_dependencies: v.number(),
   summary: severityCounts,
   max_severity: v.union(severity, v.null()),
+  trust: v.union(v.number(), v.null()),
+  lowest_trust: v.union(v.number(), v.null()),
   truncated: v.boolean(),
   unresolved: v.array(unresolvedRequirement),
+  packages: v.array(packageTrust),
   vulnerabilities: v.array(finding),
 });

@@ -9,12 +9,14 @@ import {
   type Dependency,
   type Ecosystem,
   type Finding,
+  type PackageTrust,
   type UnresolvedRequirement,
   type Vulnerability,
 } from "./model";
-import { queryOsvBatch } from "./osv/client";
+import { countOsvBatch, queryOsvBatch } from "./osv/client";
 import { mapWithConcurrency } from "./pool";
 import { latestVersion } from "./registry";
+import { trustScore } from "./trust";
 
 export const DEFAULT_DEPTH = 2;
 export const MAX_DEPTH = 6;
@@ -132,14 +134,50 @@ export async function deepReport(
   }
 
   const all = [...nodes.values()];
-  const results = await queryOsvBatch(all.map((node) => node.dependency));
 
-  return assemble(root, all, results, {
+  const [results, history] = await Promise.all([
+    queryOsvBatch(all.map((node) => node.dependency)),
+    trackRecords(registry, all),
+  ]);
+
+  return assemble(root, all, results, history, {
     depth: reached,
     requestedDepth,
     truncated,
     unresolved,
   });
+}
+
+interface TrackRecord {
+  advisories: number;
+  versions: number;
+}
+
+async function trackRecords(registry: Registry, nodes: Node[]): Promise<TrackRecord[]> {
+  const [advisories, versions] = await Promise.all([
+    countOsvBatch(
+      nodes.map((node) => ({
+        name: node.dependency.name,
+        ecosystem: node.dependency.ecosystem,
+      })),
+    ).catch(() => nodes.map(() => 0)),
+    mapWithConcurrency(nodes, REGISTRY_CONCURRENCY, async (node) => {
+      try {
+        const published = await registry.versions(
+          node.dependency.name,
+          node.dependency.ecosystem,
+        );
+        return published.length;
+      } catch {
+        return 0;
+      }
+    }),
+  ]);
+
+  return nodes.map((_, index) => ({
+    advisories: advisories[index] ?? 0,
+    versions: versions[index] ?? 0,
+  }));
 }
 
 interface Meta {
@@ -153,14 +191,31 @@ function assemble(
   root: Dependency,
   nodes: Node[],
   results: Vulnerability[][],
+  history: TrackRecord[],
   meta: Meta,
 ): DeepReport {
   const summary = emptyCounts();
   const findings: Finding[] = [];
+  const packages: PackageTrust[] = [];
   let vulnerable = 0;
 
   for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index];
     const found = results[index] ?? [];
+    const record = history[index] ?? { advisories: 0, versions: 0 };
+
+    packages.push({
+      name: node.dependency.name,
+      version: node.dependency.version,
+      ecosystem: node.dependency.ecosystem,
+      depth: node.depth,
+      path: node.path,
+      advisories: record.advisories,
+      versions: record.versions,
+      vulnerability_count: found.length,
+      trust: trustScore(record.advisories, record.versions),
+    });
+
     if (found.length === 0) {
       continue;
     }
@@ -169,11 +224,16 @@ function assemble(
 
     for (const vulnerability of found) {
       recordSeverity(summary, vulnerability.severity);
-      findings.push(toFinding(vulnerability, nodes[index].path));
+      findings.push(toFinding(vulnerability, node.path));
     }
   }
 
   findings.sort(bySeverityThenPackage);
+  packages.sort(byTrustThenName);
+
+  const rated = packages
+    .map((entry) => entry.trust)
+    .filter((score): score is number => score !== null);
 
   return {
     package: root.name,
@@ -185,10 +245,19 @@ function assemble(
     vulnerable_dependencies: vulnerable,
     summary,
     max_severity: highestSeverity(findings.map((finding) => finding.severity)),
+    trust: packages.find((entry) => entry.depth === 0)?.trust ?? null,
+    lowest_trust: rated.length > 0 ? Math.min(...rated) : null,
     truncated: meta.truncated,
     unresolved: meta.unresolved,
+    packages,
     vulnerabilities: findings,
   };
+}
+
+function byTrustThenName(a: PackageTrust, b: PackageTrust): number {
+  const left = a.trust ?? Number.POSITIVE_INFINITY;
+  const right = b.trust ?? Number.POSITIVE_INFINITY;
+  return left - right || a.name.localeCompare(b.name);
 }
 
 function toFinding(vulnerability: Vulnerability, path: string[]): Finding {

@@ -163,6 +163,11 @@ finding carries the `path` it came in through:
 There is no lockfile involved, so ranges are resolved the way a fresh install would resolve them.
 `web/README.md` says what each ecosystem contributes and what is skipped.
 
+Every package in the tree also gets a trust score out of 4, from how many advisories have ever been
+filed against it over how many versions it has published. Four advisories across four releases reads
+worse than forty across four hundred. The site draws it as four boxes that run green to yellow to
+black, and the JSON carries it in `packages`.
+
 Deep search is web only. On the command line `cvtree audit` already walks the whole tree, because a
 lockfile already lists the transitive dependencies.
 

@@ -1,7 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { deepReport, ecosystem, packageReport } from "./validators";
+import { ecosystem } from "./validators";
 
 export default defineSchema({
   packages: defineTable({
@@ -10,7 +10,7 @@ export default defineSchema({
     name: v.string(),
     version: v.string(),
     vulnerabilityCount: v.number(),
-    report: packageReport,
+    report: v.any(),
     fetchedAt: v.number(),
   })
     .index("by_key", ["key"])
@@ -24,7 +24,7 @@ export default defineSchema({
     depth: v.number(),
     dependencyCount: v.number(),
     vulnerabilityCount: v.number(),
-    report: deepReport,
+    report: v.any(),
     fetchedAt: v.number(),
   })
     .index("by_key", ["key"])

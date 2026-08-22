@@ -1,7 +1,7 @@
 import { cronJobs } from "convex/server";
 import { v } from "convex/values";
 
-import { CACHE_TTL_MS, EVICTION_BATCH } from "./cache";
+import { CACHE_TTL_MS, EVICTION_BATCH, isCurrent } from "./cache";
 import { internal } from "./_generated/api";
 import { internalMutation } from "./_generated/server";
 
@@ -18,17 +18,16 @@ export const evictStale = internalMutation({
     let deleted = 0;
 
     for (const name of targets) {
-      const stale = await ctx.db
-        .query(name)
-        .withIndex("by_fetchedAt", (entry) => entry.lt("fetchedAt", cutoff))
-        .take(EVICTION_BATCH);
+      const batch = await ctx.db.query(name).withIndex("by_fetchedAt").take(EVICTION_BATCH);
 
-      for (const row of stale) {
-        await ctx.db.delete(row._id);
-        deleted += 1;
+      for (const row of batch) {
+        if (row.fetchedAt < cutoff || !isCurrent(row.key)) {
+          await ctx.db.delete(row._id);
+          deleted += 1;
+        }
       }
 
-      if (stale.length === EVICTION_BATCH) {
+      if (batch.length === EVICTION_BATCH && deleted > 0) {
         await ctx.scheduler.runAfter(0, internal.crons.evictStale, { table: name });
       }
     }

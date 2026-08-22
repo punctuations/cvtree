@@ -82,6 +82,18 @@ export interface UnresolvedRequirement {
   reason: string;
 }
 
+export interface PackageTrust {
+  name: string;
+  version: string;
+  ecosystem: Ecosystem;
+  depth: number;
+  path: string[];
+  advisories: number;
+  versions: number;
+  vulnerability_count: number;
+  trust: number | null;
+}
+
 export interface DeepReport {
   package: string;
   version: string;
@@ -92,8 +104,11 @@ export interface DeepReport {
   vulnerable_dependencies: number;
   summary: SeverityCounts;
   max_severity: Severity | null;
+  trust: number | null;
+  lowest_trust: number | null;
   truncated: boolean;
   unresolved: UnresolvedRequirement[];
+  packages: PackageTrust[];
   vulnerabilities: Finding[];
 }
 
@@ -158,13 +173,13 @@ export function describeRange(range: AffectedRange): string {
   return parts.length > 0 ? parts.join(", ") : "all versions";
 }
 
-export function identifiers(vulnerability: Vulnerability): string[] {
-  const cves = (vulnerability.aliases ?? []).filter((alias) => alias.startsWith("CVE-"));
-  return [...new Set([...cves, vulnerability.id])];
+export function identifiers(advisory: { id: string; aliases?: string[] }): string[] {
+  const cves = (advisory.aliases ?? []).filter((alias) => alias.startsWith("CVE-"));
+  return [...new Set([...cves, advisory.id])];
 }
 
-export function advisoryUrl(vulnerability: Vulnerability): string | null {
-  const references = vulnerability.references ?? [];
-  const advisory = references.find((reference) => reference.kind === "ADVISORY");
-  return (advisory ?? references[0])?.url ?? null;
+export function advisoryUrl(advisory: { references?: Reference[] }): string | null {
+  const references = advisory.references ?? [];
+  const found = references.find((reference) => reference.kind === "ADVISORY");
+  return (found ?? references[0])?.url ?? null;
 }
