@@ -35,8 +35,8 @@ impl DependencyParser for CargoParser {
         Ecosystem::CratesIo
     }
 
-    fn lockfile(&self) -> &'static str {
-        "Cargo.lock"
+    fn lockfiles(&self) -> &'static [&'static str] {
+        &["Cargo.lock"]
     }
 
     fn parse(&self, root: &Path) -> Result<DependencyTree> {

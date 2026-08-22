@@ -44,8 +44,8 @@ impl DependencyParser for NpmParser {
         Ecosystem::Npm
     }
 
-    fn lockfile(&self) -> &'static str {
-        "package-lock.json"
+    fn lockfiles(&self) -> &'static [&'static str] {
+        &["package-lock.json"]
     }
 
     fn parse(&self, root: &Path) -> Result<DependencyTree> {

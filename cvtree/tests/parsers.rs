@@ -204,7 +204,15 @@ fn discovery_reports_missing_lockfiles() {
     assert!(matches!(error, cvtree::Error::NoLockfile(_)));
     assert_eq!(
         parser::supported_lockfiles(),
-        vec!["package-lock.json", "Cargo.lock"]
+        vec![
+            "package-lock.json",
+            "Cargo.lock",
+            "poetry.lock",
+            "pdm.lock",
+            "uv.lock",
+            "requirements.txt",
+            "pyproject.toml",
+        ]
     );
 }
 
@@ -217,4 +225,203 @@ fn reports_broken_lockfiles_with_the_path() {
         .expect_err("invalid json");
     let message = error.to_string();
     assert!(message.contains("package-lock.json"), "{message}");
+}
+
+#[test]
+fn normalizes_python_names_per_pep_503() {
+    use cvtree::parser::python::normalize;
+
+    assert_eq!(normalize("Jinja2"), "jinja2");
+    assert_eq!(normalize("MarkupSafe"), "markupsafe");
+    assert_eq!(normalize("zope.interface"), "zope-interface");
+    assert_eq!(normalize("apache_airflow"), "apache-airflow");
+    assert_eq!(normalize("Foo__Bar"), "foo-bar");
+    assert_eq!(normalize("a.-_b"), "a-b");
+}
+
+#[test]
+fn reads_requirement_names_without_their_specifiers() {
+    use cvtree::parser::python::requirement_name;
+
+    assert_eq!(requirement_name("jinja2==2.11.3"), Some("jinja2"));
+    assert_eq!(requirement_name("requests[security]>=2.0"), Some("requests"));
+    assert_eq!(requirement_name("zope.interface==5.4.0"), Some("zope.interface"));
+    assert_eq!(
+        requirement_name("urllib3==1.26.5 ; python_version >= \"3.6\""),
+        Some("urllib3")
+    );
+    assert_eq!(requirement_name("# a comment"), None);
+    assert_eq!(requirement_name("-r base.txt"), None);
+    assert_eq!(requirement_name("-e ."), None);
+    assert_eq!(requirement_name("   "), None);
+}
+
+#[test]
+fn requirements_txt_keeps_only_pinned_versions() {
+    let (_dir, root) = project(&[("requirements.txt", &fixture("requirements.txt"))]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(tree.ecosystem, Ecosystem::PyPi);
+    assert_eq!(
+        names(&tree),
+        vec![
+            "Jinja2@2.11.3",
+            "certifi@2020.12.5",
+            "requests@2.25.1",
+            "urllib3@1.26.5",
+            "zope.interface@5.4.0",
+        ]
+    );
+}
+
+#[test]
+fn parses_poetry_lockfiles_with_a_dependency_table() {
+    let (_dir, root) = project(&[
+        ("poetry.lock", &fixture("poetry.lock")),
+        ("pyproject.toml", &fixture("poetry-pyproject.toml")),
+    ]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(tree.project, "poetry-demo");
+    assert_eq!(
+        names(&tree),
+        vec!["Jinja2@2.11.3", "MarkupSafe@1.1.1", "click@7.1.2"]
+    );
+    assert_eq!(
+        path_to(
+            &tree,
+            &Dependency::new("MarkupSafe", "1.1.1", Ecosystem::PyPi)
+        ),
+        vec!["Jinja2@2.11.3", "MarkupSafe@1.1.1"]
+    );
+}
+
+#[test]
+fn poetry_direct_dependencies_come_from_pyproject() {
+    let (_dir, root) = project(&[
+        ("poetry.lock", &fixture("poetry.lock")),
+        ("pyproject.toml", &fixture("poetry-pyproject.toml")),
+    ]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    let mut direct: Vec<String> = tree
+        .roots
+        .iter()
+        .map(|id| tree.node(*id).dependency.to_string())
+        .collect();
+    direct.sort();
+
+    assert_eq!(direct, vec!["Jinja2@2.11.3", "click@7.1.2"]);
+}
+
+#[test]
+fn parses_pdm_lockfiles_with_specifier_arrays() {
+    let (_dir, root) = project(&[
+        ("pdm.lock", &fixture("pdm.lock")),
+        ("pyproject.toml", &fixture("pep621-pyproject.toml")),
+    ]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(names(&tree), vec!["jinja2@2.11.3", "markupsafe@1.1.1"]);
+    assert_eq!(
+        path_to(
+            &tree,
+            &Dependency::new("markupsafe", "1.1.1", Ecosystem::PyPi)
+        ),
+        vec!["jinja2@2.11.3", "markupsafe@1.1.1"]
+    );
+}
+
+#[test]
+fn parses_uv_lockfiles_with_dependency_tables() {
+    let (_dir, root) = project(&[
+        ("uv.lock", &fixture("uv.lock")),
+        ("pyproject.toml", &fixture("pep621-pyproject.toml")),
+    ]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(names(&tree), vec!["jinja2@2.11.3", "markupsafe@1.1.1"]);
+    assert_eq!(
+        path_to(
+            &tree,
+            &Dependency::new("markupsafe", "1.1.1", Ecosystem::PyPi)
+        ),
+        vec!["jinja2@2.11.3", "markupsafe@1.1.1"]
+    );
+}
+
+#[test]
+fn uv_lockfiles_exclude_the_local_project() {
+    let (_dir, root) = project(&[
+        ("uv.lock", &fixture("uv.lock")),
+        ("pyproject.toml", &fixture("pep621-pyproject.toml")),
+    ]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert!(
+        !names(&tree).iter().any(|name| name.starts_with("uv-demo")),
+        "{:?}",
+        names(&tree)
+    );
+}
+
+#[test]
+fn falls_back_to_pyproject_when_there_is_no_lockfile() {
+    let (_dir, root) = project(&[("pyproject.toml", &fixture("pep621-pyproject.toml"))]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(tree.project, "pep621-demo");
+    assert_eq!(names(&tree), vec!["click@7.1.2", "jinja2@2.11.3"]);
+}
+
+#[test]
+fn a_lock_without_a_manifest_marks_everything_direct() {
+    let (_dir, root) = project(&[("pdm.lock", &fixture("pdm.lock"))]);
+    let tree = parser::python::PythonParser.parse(&root).expect("parse");
+
+    assert_eq!(tree.roots.len(), tree.len());
+}
+
+#[test]
+fn python_lockfiles_take_precedence_over_pyproject() {
+    let (_dir, root) = project(&[
+        ("poetry.lock", &fixture("poetry.lock")),
+        ("pyproject.toml", &fixture("poetry-pyproject.toml")),
+    ]);
+
+    let detected = parser::detect(&root).expect("detect");
+    assert_eq!(detected.ecosystem(), Ecosystem::PyPi);
+    assert_eq!(
+        detected.detected_lockfile(&root),
+        Some(root.join("poetry.lock"))
+    );
+}
+
+#[test]
+fn detects_python_projects_from_every_supported_lockfile() {
+    for name in ["poetry.lock", "pdm.lock", "uv.lock"] {
+        let (_dir, root) = project(&[(name, &fixture(name))]);
+        assert_eq!(
+            parser::detect(&root).map(|parser| parser.ecosystem()),
+            Some(Ecosystem::PyPi),
+            "{name}"
+        );
+    }
+
+    let (_dir, root) = project(&[("requirements.txt", &fixture("requirements.txt"))]);
+    assert_eq!(
+        parser::detect(&root).map(|parser| parser.ecosystem()),
+        Some(Ecosystem::PyPi)
+    );
+}
+
+#[test]
+fn reports_broken_python_lockfiles_with_the_path() {
+    let (_dir, root) = project(&[("poetry.lock", "[[package]\nname =")]);
+
+    let error = parser::python::PythonParser
+        .parse(&root)
+        .expect_err("invalid toml");
+    let message = error.to_string();
+    assert!(message.contains("poetry.lock"), "{message}");
 }

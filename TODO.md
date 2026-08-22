@@ -31,17 +31,32 @@ the feature the project is named after.
 
 ## Ecosystem coverage
 
-The web track now handles PyPI as well as npm and crates.io. The CLI does not, so `pip:` works on
-the site and fails on the command line.
+Both tracks now handle npm, crates.io and PyPI. The Python parser reads `poetry.lock`, `pdm.lock`,
+`uv.lock`, `requirements.txt` and `pyproject.toml`, taking only `==` pins from the last two.
 
-- [ ] Add PyPI to the Rust `Ecosystem` enum and registry client, matching the web track
-- [ ] Parse `requirements.txt` and `poetry.lock`
+- [ ] Read `[[package]]` edges from poetry v2 lockfiles, which nest them differently
+- [ ] Handle `-r other.txt` includes in `requirements.txt` instead of skipping the line
 - [ ] Parse `yarn.lock`
 - [ ] Parse `pnpm-lock.yaml`
 - [ ] Keep the `devDependencies` distinction from `package-lock.json` on the node
 - [ ] Add an `--omit dev` option once dev dependencies are marked
 - [ ] Score CVSS v4 vectors, which currently fall back to the advisory label or UNKNOWN
 - [ ] Decide whether UNKNOWN severity should trip `--fail-on`, since today it never does
+
+## Fixing
+
+`cvtree fix` trusts the highest `fixed` boundary OSV reports. Most of the time that is a real
+release, but an advisory for an abandoned package can name a version that was never published, and
+the package manager then rejects it. RUSTSEC-2020-0056 does this: it says stdweb is fixed in
+0.4.21-0, and crates.io tops out at 0.4.20. The failure is reported per package and the run exits 1,
+so nothing is silently wrong, but the fix should never have been planned.
+
+- [ ] Give `RegistryClient` a way to ask whether a version exists, then move unpublished fix
+      boundaries into the unfixable list before anything is written
+- [ ] Prefer the lowest published version that clears every advisory over the highest fixed
+      boundary, so an express 4 app is not handed express 5. Needs the same registry lookup
+- [ ] Re-audit after applying and report the resulting counts, instead of asking the user to re-run
+- [ ] Let `--fail-on` narrow which findings get fixed, so a run can address only the severe ones
 
 ## Output
 

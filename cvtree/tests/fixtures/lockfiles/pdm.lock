@@ -1,0 +1,17 @@
+[[package]]
+name = "jinja2"
+version = "2.11.3"
+requires_python = ">=2.7"
+summary = "A very fast and expressive template engine."
+dependencies = [
+    "MarkupSafe>=0.23",
+]
+
+[[package]]
+name = "markupsafe"
+version = "1.1.1"
+requires_python = ">=2.7"
+summary = "Safely add untrusted strings to HTML/XML markup."
+
+[metadata]
+lock_version = "4.2"

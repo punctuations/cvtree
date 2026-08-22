@@ -1,0 +1,21 @@
+# Ignore local build output and dependencies
+node_modules/
+target/
+dist/
+build/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.pyre/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Generated lockfiles, see README.md for how to produce them
+package-lock.json
+poetry.lock
+pdm.lock
+uv.lock

@@ -1,0 +1,2 @@
+# Example vulnerable Python dependency
+jinja2==2.11.3
