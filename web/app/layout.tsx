@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
 
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 import "./globals.css";
-
-const mono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "cvtree",
@@ -17,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={mono.variable}>
+    <html lang="en">
       <body>
         <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
