@@ -7,13 +7,6 @@ import { useCachedLookup, useDirectLookup, type Lookup } from "@/lib/useLookup";
 import { cacheEnabled } from "./ConvexClientProvider";
 import { Report } from "./Report";
 
-const EXAMPLES = [
-  "lodash@4.17.15",
-  "npm:express@4.17.1",
-  "cargo:time@0.1.44",
-  "pip:pyyaml@5.3.1",
-];
-
 export function Search({ wordmark }: { wordmark: ReactNode }) {
   return cacheEnabled ? <CachedSearch wordmark={wordmark} /> : <DirectSearch wordmark={wordmark} />;
 
@@ -27,7 +20,13 @@ function DirectSearch({ wordmark }: { wordmark: ReactNode }) {
   return <SearchView wordmark={wordmark} lookup={useDirectLookup()} />;
 }
 
-const SUGGESTIONS = ["lodash@4.17.15", "express@4.17.1", "cargo:time@0.1.44", "minimist@1.2.5"];
+const SUGGESTIONS = [
+  "lodash@4.17.15",
+  "express@4.17.1",
+  "cargo:time@0.1.44",
+  "pip:pyyaml@5.3.1",
+  "minimist@1.2.5",
+];
 
 function SearchView({ wordmark, lookup }: { wordmark: ReactNode; lookup: Lookup }) {
   const [input, setInput] = useState("");
